@@ -1,0 +1,15 @@
+language: python
+
+python:
+  - "3.6"
+
+install:
+    - pip install jupyter
+    - pip install GPy
+    - pip install matplotlib
+    - pip install numpy
+    - pip install scipy
+    - pip install sklearn    
+
+script:
+    - jupyter nbconvert --to notebook --execute 01-bayesian_regression.ipynb
