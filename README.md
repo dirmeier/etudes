@@ -25,6 +25,7 @@ The repository hosts some `jupyter notebooks` on Gaussian processes in Python. T
 ## Notebooks
 
 - [01 Intro to Bayesian linear regression](01-bayesian_regression.ipynb) introduces the concept of *Bayesian inference* using a linear regression example and how we *move* from putting distributions on parameters to putting distributions on functions.
+- [02 Gaussian process regression](02-gaussian_process_regression.ipynb) introduces non-parametric Bayesian regression.
 
 ## Author
 
