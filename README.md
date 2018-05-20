@@ -10,7 +10,7 @@
 
 ## Introduction
 
-The repository hosts some `jupyter notebooks` on Gaussian processes in Python. The first few introductory chapters follow [Rasmussen and Williams (2006)](http://www.gaussianprocess.org/gpml/). The rest are from recent publications on Gaussian processes, i. e.
+The repository hosts some `jupyter notebooks` on Gaussian processes in Python using `GPy` and `scipy`. The first few introductory chapters follow [Rasmussen and Williams (2006)](http://www.gaussianprocess.org/gpml/). The rest are from recent publications on Gaussian processes, i. e.
 
 - scaling to big data problems,
 - distributed computation,
@@ -22,10 +22,13 @@ The repository hosts some `jupyter notebooks` on Gaussian processes in Python. T
 - kernel approximations,
 - sparse Gaussian processes.
 
+**I do not take warranty for the correctness or completeness of these documents.**
+
 ## Notebooks
 
 - [01 Intro to Bayesian linear regression](01-bayesian_regression.ipynb) introduces the concept of *Bayesian inference* using a linear regression example and how we *move* from putting distributions on parameters to putting distributions on functions.
 - [02 Gaussian process regression](02-gaussian_process_regression.ipynb) introduces non-parametric Bayesian regression.
+- [03 Gaussian process classification](02-gaussian_process_regression.ipynb) introduces non-parametric Bayesian regression.
 
 ## Author
 
