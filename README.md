@@ -3,10 +3,8 @@
 
 
 [![Project Status](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
-[![Travis](https://travis-ci.org/dirmeier/probabilistic-modelling-notebooks
-svg?branch=master)](https://travis-ci.org/dirmeier/probabilistic-modelling-notebooks)
-[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/dirmeier/probabilistic-modelling-notebooks
-ach/master)
+[![Travis](https://travis-ci.org/dirmeier/probabilistic-modelling-notebooks.svg?branch=master)](https://travis-ci.org/dirmeier/probabilistic-modelling-notebooks)
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/dirmeier/probabilistic-modelling-notebooks/master)
 
 A collection of Jupyter notebooks on Probabilistic Models.
 

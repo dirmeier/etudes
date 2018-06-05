@@ -14,6 +14,5 @@ install:
     - pip install seaborn
 
 script:
-    - jupyter nbconvert --to notebook --execute 01-bayesian_regression.ipynb
     - jupyter nbconvert --to notebook --execute 02-gaussian_process_regression.ipynb
     - jupyter nbconvert --to notebook --execute 03-gaussian_process_classification.ipynb
