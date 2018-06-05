@@ -1,34 +1,26 @@
 
-# Gaussian process notebooks
+# Probabilistic modelling notebooks
 
 
 [![Project Status](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
-[![Travis](https://travis-ci.org/dirmeier/gaussian-process-notebooks.svg?branch=master)](https://travis-ci.org/dirmeier/gaussian-process-notebooks)
-[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/dirmeier/gaussian-process-notebooks/master)
+[![Travis](https://travis-ci.org/dirmeier/probabilistic-modelling-notebooks
+svg?branch=master)](https://travis-ci.org/dirmeier/probabilistic-modelling-notebooks)
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/dirmeier/probabilistic-modelling-notebooks
+ach/master)
 
- A collection of Jupyter notebooks on Gaussian processes.
+A collection of Jupyter notebooks on Probabilistic Models.
 
 ## Introduction
 
-The repository hosts some `jupyter notebooks` on Gaussian processes in Python using `GPy` and `scipy`. The first few introductory chapters follow [Rasmussen and Williams (2006)](http://www.gaussianprocess.org/gpml/). The rest are from recent publications on Gaussian processes, i. e.
-
-- scaling to big data problems,
-- distributed computation,
-- Gaussian process latent variable models,
-- Gaussian process regression networks,
-- Student-t processes, 
-- variational inference and sampling,
-- mixtures of Gaussian processes,
-- kernel approximations,
-- sparse Gaussian processes.
+The repository hosts some `jupyter notebooks` on probabilistic models in Python using  `Edward`, `PyMC3`, `GPy` and `PyStan`. The first few notebooks follow [Rasmussen and Williams (2006)](http://www.gaussianprocess.org/gpml/) and introduce simple Gaussian process models. The next couple of notebooks will be on other models such as splines, hierarchical models or generative models.
 
 **I do not take warranty for the correctness or completeness of these documents.**
 
 ## Notebooks
 
-- [01 Intro to Bayesian linear regression](https://nbviewer.jupyter.org/github/dirmeier/gaussian-process-notebooks/tree/master/01-bayesian_regression.ipynb) introduces the concept of *Bayesian inference* using a linear regression example and how we *move* from putting distributions on parameters to putting distributions on functions.
-- [02 Gaussian process regression](https://nbviewer.jupyter.org/github/dirmeier/gaussian-process-notebooks/blob/master/02-gaussian_process_regression.ipynb) introduces non-parametric Bayesian regression.
-- [03 Gaussian process classification](https://nbviewer.jupyter.org/github/dirmeier/gaussian-process-notebooks/blob/master/03-gaussian_process_classification.ipynb) extends Gaussian process regression to classification scenarios. 
+- [01 Intro to Bayesian linear regression](https://nbviewer.jupyter.org/github/dirmeier/probabilistic-modelling-notebooks/tree/master/01-bayesian_regression.ipynb) introduces the concept of *Bayesian inference* using a linear regression example and how we *move* from putting distributions on parameters to putting distributions on functions.
+- [02 Gaussian process regression](https://nbviewer.jupyter.org/github/dirmeier/probabilistic-modelling-notebooks/blob/master/02-gaussian_process_regression.ipynb) introduces non-parametric Bayesian regression.
+- [03 Gaussian process classification](https://nbviewer.jupyter.org/github/dirmeier/probabilistic-modelling-notebooks/blob/master/03-gaussian_process_classification.ipynb) extends Gaussian process regression to classification scenarios. 
 
 ## Author
 
