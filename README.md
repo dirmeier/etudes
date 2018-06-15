@@ -10,7 +10,13 @@ A collection of Jupyter notebooks on Probabilistic Models.
 
 ## Introduction
 
-The repository hosts some `jupyter notebooks` on probabilistic models in Python using  `Edward`, `PyMC3`, `GPy` and `PyStan`. The first few notebooks follow [Rasmussen and Williams (2006)](http://www.gaussianprocess.org/gpml/) and introduce simple Gaussian process models. The next couple of notebooks will be on other models such as splines, hierarchical models or generative models.
+The repository hosts some `jupyter notebooks` on probabilistic models, such as
+
+* hierarchical models,
+* (non-parametric) Bayesian models,
+* graphical models.
+
+The notebooks use probabilistic languages/packages such a `Edward`, `PyMC3`, `GPy`, `Stan` and `Greta` and are only serving as a personal collection.
 
 **I do not take warranty for the correctness or completeness of these documents.**
 
