@@ -1,6 +1,4 @@
-<h1 align="center"> bayesian-filtering </h1>
-
-[![Project Status](http://www.repostatus.org/badges/latest/concept.svg)](http://www.repostatus.org/#concept)
+# Bayesian Filtering
 
 Bayesian filtering test implementations in Python.
 
@@ -24,12 +22,11 @@ Example for state estimation using a particle filter.
 
 <div align="center">
 <p>Recursive estimation of states</p>
-<img src="https://github.com/dirmeier/bayesian-filtering/blob/master/_fig/particle_filter.png" alt="Drawing" width="50%" />
+
+<img src="https://github.com/dirmeier/probabilistic-modelling-notebooks/blob/develop/bayesian-filtering/_fig/particle_filter.png" alt="Drawing" width="50%" />
 </div>
 
 
 ## Author
 
-* Simon Dirmeier <a href="simon.dirmeier@gmx.de">simon.dirmeier@gmx.de</a>
-
-
+* Simon Dirmeier <a href="simon.dirmeier@web.de">simon.dirmeier@web.de</a>
