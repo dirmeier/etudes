@@ -32,7 +32,7 @@ Bayesian regression:
 
 Graphical models:
 
-- [Bayesian filtering](https://github.com/dirmeier/probabilistic-modelling-notebooks/tree/master/bayesian-filtering) introduces recursive estimation using the Kalman and particle filters.
+- [Bayesian filtering](https://github.com/dirmeier/probabilistic-modelling-notebooks/tree/master/bayesian-filtering.ipynb) introduces recursive estimation using the Kalman and particle filters.
 - [Gaussian Graphical Models](https://nbviewer.jupyter.org/github/dirmeier/probabilistic-modelling-notebooks/blob/master/gaussian_graphical_models.ipynb) implements the *graphical LASSO* for sparse precision matrix estimation.
 - [Pairwise binary Markov random fields](https://github.com/dirmeier/probabilistic-modelling-notebooks/blob/master/pb-mrf.ipynb) shows the application of undirected graphical models to expression data.
 - [Gaussian mixture model](https://nbviewer.jupyter.org/github/dirmeier/probabilistic-programming-notebooks/blob/master/gaussian_mixture_model.ipynb) implements a Gaussian mixture model using Expectation Maximization, and using Variational inference and Monte Carlo estimation.
