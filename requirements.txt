@@ -1,4 +1,10 @@
+igraph
+tensorflow
+jupyter
+cvxpy
+matplotlib
 numpy
 scipy
-igraph
-matplotlib
+sklearn
+keras
+pystan

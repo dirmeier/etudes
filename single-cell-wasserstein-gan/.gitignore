@@ -1,0 +1,10 @@
+.ipynb_checkpoints
+pygco/*
+Makefile
+__pycache__/*
+cgco*
+gco_source/*
+images/*
+pygco.py
+test*
+libcgco.so
