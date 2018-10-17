@@ -29,8 +29,7 @@ The repository hosts some numerical recipes in the form of `jupyter` notebooks o
 - [QR-decomposition](https://nbviewer.jupyter.org/github/dirmeier/recipes/blob/master/qr_decomposition.ipynb) can be used for solving a linear regression model instead of the analytical solution. This is supposedly more stable. The implementation is in Python.
 
 - [Deep Drama](https://nbviewer.jupyter.org/github/dirmeier/recipes/blob/master/deep_drama.ipynb) implements a long short-term memory network for creating Greek drama. It uses drama from Euripides, Sophocles, Aristophanes and
- Aischylos from the Gutenberg project to train a recurrent neural network and then uses the trained model to *write* drama. In that sense it acts similar to other sequence models, just like HMMs. The network is implemented in R's `Keras` interf
-ace.
+ Aischylos from the Gutenberg project to train a recurrent neural network and then uses the trained model to *write* drama. In that sense it acts similar to other sequence models, just like HMMs. The network is implemented in R's `Keras` interface.
 - [Non-linear component analysis](https://nbviewer.jupyter.org/github/dirmeier/recipes/blob/master/non_linear_component_analysis.ipynb) does an approximation to a kernel PCA using Nystroem features (Williams *et al*. (2001))
 and random Fourier features (Rahimi *et al* (2008)). The advantage of both is reduced runtime and approximately as good results as a full kernel-PCA. The implementation is in Python.
 - [Regularized regression](https://nbviewer.jupyter.org/github/dirmeier/recipes/blob/master/regularized_regression.ipynb) shows how disciplined convex programming can be used to solve a regularized regression model (`cvxpy`).
