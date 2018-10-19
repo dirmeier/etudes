@@ -1,1 +1,4 @@
 gan_mnist
+images.npy
+images_small.npy
+images/*
