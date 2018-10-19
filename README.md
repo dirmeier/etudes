@@ -39,9 +39,8 @@ Te notebooks are on probabilistic models, machine learning, optimization, numeri
  Aischylos from the Gutenberg project to train a recurrent neural network and then uses the trained model to *write* drama. In that sense it acts similar to other sequence models, just like HMMs. The network is implemented in R's `Keras` interface.
 - [Non-linear component analysis](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/non_linear_component_analysis.ipynb) does an approximation to a kernel PCA using Nystroem features (Williams *et al*. (2001))
 and random Fourier features (Rahimi *et al* (2008)). The advantage of both is reduced runtime and approximately as good results as a full kernel-PCA. The implementation is in Python.
-- [Single cell autoencoder](https://github.com/dirmeier/etudes/tree/master/single-cell-autoencoder) uses deep-convolutional autoencoders to extract features from single-cell imaging data.
-- [Single cell deep net](https://github.com/dirmeier/etudes/tree/master/single-cell-deep-net) compares deep neural networks with logistic regression and random forests for the prediction of infected cells.
-- [Single cell GAN](https://github.com/dirmeier/etudes/tree/master/single-cell-wasserstein-gan) uses DC-Wasserstein-GANs to create artificial single-cell microscopy images.
+- [Single cell autoencoder](https://github.com/dirmeier/etudes/tree/master/single-cell-autoencoder.ipynb) uses deep-convolutional autoencoders to extract features from single-cell imaging data.
+- [Single cell GAN](https://github.com/dirmeier/etudes/tree/master/single-cell-gan.ipynb) uses DC-Wasserstein-GANs to create artificial single-cell microscopy images.
 
 ## Études on optimization
 - [SVM](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/svm.ipynb) is an implementation of the Lagrangian dual formulation of the usual hinge-loss for SVMs in Python.
