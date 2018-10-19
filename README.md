@@ -13,7 +13,7 @@ Te notebooks are on probabilistic models, machine learning, optimization, numeri
 
 **I do not take warranty for the correctness or completeness of these.**
 
-## Études Regression
+## Études on regression
 
 - [01 Intro to Bayesian linear regression](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/bayesian_regression.ipynb) introduces the concept of *Bayesian inference* using a linear regression example and how we *move* from putting distributions on parameters to putting distributions on functions.
 - [01a Bayesian Lasso](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/bayesian_lasso.ipynb) explains how the frequentist LASSO can be interpreted as conditional Laplace prior on the regression coefficients.
