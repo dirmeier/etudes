@@ -1,5 +1,6 @@
 ### Methods maybe going to be implemented
 
+* GP-LVM
 * add algodat stuff
 * Decision trees
 * Ising models with variational inference and sampling
