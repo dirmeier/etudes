@@ -46,6 +46,7 @@ and random Fourier features (Rahimi *et al* (2008)). The advantage of both is re
 
 ## Études on optimization
 
+- [ADMM](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/admm.ipynb) implements the LASSO using the alternative direction method of multipliers.
 - [SVM](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/svm.ipynb) is an implementation of the Lagrangian dual formulation of the usual hinge-loss for SVMs in Python.
 - [Regularized regression](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/regularized_regression.ipynb) shows how disciplined convex programming can be used to solve a regularized regression model (`cvxpy`).
 
