@@ -26,7 +26,9 @@ Te notebooks are on probabilistic models, machine learning, optimization, numeri
 
 - [Kalman  filter](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/extended_kalman_filter.ipynb) shows the application of undirected graphical models to expression data.
 - [Gaussian Graphical Models](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/gaussian_graphical_models.ipynb) implements the *graphical LASSO* for sparse precision matrix estimation.
-- [Gaussian mixture model](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/gaussian_mixture_model.ipynb) implements a Gaussian mixture model using Expectation Maximization, and using Variational inference and Monte Carlo estimation.
+- [01 Mixture models](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/mixture_models.ipynb) implements a Gaussian mixture model using Expectation Maximization.
+- [02 Bayesian mixture models](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/bayesian_mixture_model.ipynb) treats mixture models in a Bayesian fashion. Inference is done with Gibbs sampling and Stan.
+- [03 Dirichlet process mixture models](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/dirichlet_process_mixture_models.ipynb) extends the Bayesian mixture to the infinite case, i.e. when we don't know the number of clusters beforehand. We use the *Chinese restaurant process* and the *stick-breaking construction* for inference.
 - [Pairwise binary Markov random fields](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/pb-mrf.ipynb) shows the application of undirected graphical models to expression data.
 - [Particle filter](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/particle_filter.ipynb) introduces recursive estimation using the Kalman and particle filters.
 
