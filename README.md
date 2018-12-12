@@ -29,6 +29,7 @@ Te notebooks are on probabilistic models, machine learning, optimization, numeri
 - [01 Mixture models](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/mixture_models.ipynb) implements a Gaussian mixture model using Expectation Maximization.
 - [02 Bayesian mixture models](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/bayesian_mixture_models.ipynb) treats mixture models in a Bayesian fashion. Inference is done with Gibbs sampling and Stan.
 - [03 Dirichlet process mixture models](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/dirichlet_process_mixture_models.ipynb) extends the Bayesian mixture to the infinite case, i.e. when we don't know the number of clusters beforehand. We use the *Chinese restaurant process* and the *stick-breaking construction* for inference.
+- [04 Indian Buffets](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/indian_buffets.ipynb) shows the generative process of binary matrices with possibly infinitely many numbers of columns.
 - [Pairwise binary Markov random fields](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/pb-mrf.ipynb) shows the application of undirected graphical models to expression data.
 - [Particle filter](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/particle_filter.ipynb) introduces recursive estimation using the Kalman and particle filters.
 - [Latent Dirichlet allocation](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/latent_dirichlet_allocation.ipynb) implements a topic model for several works of Aeschylos from the Gutenberg text corpus using Gibbs sampling.
@@ -52,7 +53,7 @@ and random Fourier features (Rahimi *et al* (2008)). The advantage of both is re
 - [ADMM](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/admm.ipynb) implements the LASSO using the alternative direction method of multipliers.
 - [SVM](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/svm.ipynb) is an implementation of the Lagrangian dual formulation of the usual hinge-loss for SVMs in Python.
 - [Regularized regression](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/regularized_regression.ipynb) shows how disciplined convex programming can be used to solve a regularized regression model (`cvxpy`).
-
+- [$t$-SNE](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/tsne.ipynb) shows how to implement $t$-SNE.
 
 ## Études on other stuff
 
