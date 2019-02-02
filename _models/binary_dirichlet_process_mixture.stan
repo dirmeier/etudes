@@ -9,13 +9,13 @@ data {
 }
 
 parameters {    	
-  	ordered[p] rates[K];
+  	ordered[K] rates;
 	real <lower=0, upper=1> nu[K];	
 }
 
 transformed parameters {
   simplex[K] pi;
-  row_vector<lower=0, upper=1>[p] prob[K];
+  vector<lower=0, upper=1>[K] prob;
 
   pi[1] = nu[1];
   for(j in 2:(K-1)) 
@@ -24,11 +24,7 @@ transformed parameters {
   }
 
   pi[K] = 1 - sum(pi[1:(K - 1)]);
-
-  for (k in 1:K) 
-  {
-  	for (ps in 1:p) prob[k, ps] = inv_logit(rates[k, ps]);
-  }
+  prob = inv_logit(rates);  
 }
 
 model {
@@ -42,7 +38,7 @@ model {
 			mix[k] = log(pi[k]);
 			for (ps in 1:p)
 			{
-				mix[k] += bernoulli_lpmf(x[i, ps] | prob[k, ps]);
+				mix[k] += bernoulli_lpmf(x[i, ps] | prob[k]);
 			}
 		}
 		target += log_sum_exp(mix);
