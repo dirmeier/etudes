@@ -53,11 +53,11 @@ and random Fourier features (Rahimi *et al* (2008)). The advantage of both is re
 - [ADMM](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/admm.ipynb) implements the LASSO using the alternative direction method of multipliers.
 - [SVM](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/svm.ipynb) is an implementation of the Lagrangian dual formulation of the usual hinge-loss for SVMs in Python.
 - [Regularized regression](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/regularized_regression.ipynb) shows how disciplined convex programming can be used to solve a regularized regression model (`cvxpy`).
-- [$t$-SNE](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/tsne.ipynb) shows how to implement $t$-SNE.
+- [`t`-SNE](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/tsne.ipynb) shows how to implement `t`-SNE.
 
 ## Études on other stuff
 
-- [Lady tasting tea](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/lady_tasting_tea..ipynb) is a Bayesian analysis of Fisher's *Lady testing tea* experiment
+- [Lady tasting tea](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/lady_tasting_tea.ipynb) is a Bayesian analysis of Fisher's *Lady testing tea* experiment
 
 
 
