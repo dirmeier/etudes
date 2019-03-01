@@ -1,7 +1,6 @@
 # Études
 
 [![Project Status](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
-[![Travis](https://travis-ci.org/dirmeier/etudes.svg?branch=master)](https://travis-ci.org/dirmeier/etudes)
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/dirmeier/etudes/master)
 
 :notes: A collection of numerical études.
