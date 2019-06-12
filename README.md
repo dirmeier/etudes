@@ -57,7 +57,7 @@ and random Fourier features (Rahimi *et al* (2008)). The advantage of both is re
 ## Études on other stuff
 
 - [Lady tasting tea](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/lady_tasting_tea.ipynb) is a Bayesian analysis of Fisher's *Lady testing tea* experiment
-
+- [SBC](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/simulation_based_calibration.ipynb) shows a method to validate Bayesian posterior inferences.
 
 
 ## Author
