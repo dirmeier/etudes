@@ -1,24 +1,28 @@
-transformed data {
-	real mu_sim = 0;
-	real sigma_sim = 1;
+data {
+	int<lower=1> n;
+	vector[n] x;
+}
 
-	int<lower = 0> N = 10;
-	vector[N] y_sim;
-	for (i in 1:N)
-		y_sim[i] = normal_rng(mu_sim, sigma_sim);
+transformed data {
+	real beta_sim = normal_rng(0, 1);
+	real<lower=0> sigma_sim = lognormal_rng(0, 1);
+	
+	vector[n] y_sim;
+	for (i in 1:n)
+		y_sim[i] = normal_rng(x[i] * beta_sim, sigma_sim);
 }
 
 parameters {
-	real mu;
+	real beta;
 	real<lower = 0> sigma;
 }
 
 model {
-	mu ~ normal(0, 1);
+	beta ~ normal(0, 1);
 	sigma ~ lognormal(0, 1);
-  	y_sim ~ normal(mu, sigma);
+  	y_sim ~ normal(x * beta, sigma);
 }
 
 generated quantities {
-	int idsim[2] = { mu < mu_sim, sigma < sigma_sim };
+	int idsim[2] = { beta < beta_sim, sigma < sigma_sim };
 }
