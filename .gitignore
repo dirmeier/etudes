@@ -1,4 +1,5 @@
 .ipynb_checkpoints/
+.idea
 pb-mrf/*
 .Rproj.user
 __pycache__
