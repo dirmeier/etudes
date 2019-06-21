@@ -62,6 +62,7 @@ and random Fourier features (Rahimi *et al* (2008)). The advantage of both is re
 ## Études on probabilistic programs
 
 - [Custom Greta distributions](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/custom_greta_distributions.ipynb) shows how one can implement custom distributions (likelihoods) for Greta.
+- [Truncated Stick breaking in Greta](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/truncated_stick_breaking_in_greta.ipynb) shows how one can implement truncated Dirichlet process mixture models in Greta.
 
 ## Author
 
