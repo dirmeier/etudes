@@ -1,7 +1,7 @@
 # Études
 
 [![Project Status](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
-[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/dirmeier/etudes/master)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/dirmeier/etudes/master)
 
 :notes: A collection of numerical études.
 
