@@ -13017,58 +13017,6 @@ ul.typeahead-list  > li > a.pull-right {
 .highlight .vm { color: #19177C } /* Name.Variable.Magic */
 .highlight .il { color: #666666 } /* Literal.Number.Integer.Long */
     </style>
-<style type="text/css">
-    
-/* Temporary definitions which will become obsolete with Notebook release 5.0 */
-.ansi-black-fg { color: #3E424D; }
-.ansi-black-bg { background-color: #3E424D; }
-.ansi-black-intense-fg { color: #282C36; }
-.ansi-black-intense-bg { background-color: #282C36; }
-.ansi-red-fg { color: #E75C58; }
-.ansi-red-bg { background-color: #E75C58; }
-.ansi-red-intense-fg { color: #B22B31; }
-.ansi-red-intense-bg { background-color: #B22B31; }
-.ansi-green-fg { color: #00A250; }
-.ansi-green-bg { background-color: #00A250; }
-.ansi-green-intense-fg { color: #007427; }
-.ansi-green-intense-bg { background-color: #007427; }
-.ansi-yellow-fg { color: #DDB62B; }
-.ansi-yellow-bg { background-color: #DDB62B; }
-.ansi-yellow-intense-fg { color: #B27D12; }
-.ansi-yellow-intense-bg { background-color: #B27D12; }
-.ansi-blue-fg { color: #208FFB; }
-.ansi-blue-bg { background-color: #208FFB; }
-.ansi-blue-intense-fg { color: #0065CA; }
-.ansi-blue-intense-bg { background-color: #0065CA; }
-.ansi-magenta-fg { color: #D160C4; }
-.ansi-magenta-bg { background-color: #D160C4; }
-.ansi-magenta-intense-fg { color: #A03196; }
-.ansi-magenta-intense-bg { background-color: #A03196; }
-.ansi-cyan-fg { color: #60C6C8; }
-.ansi-cyan-bg { background-color: #60C6C8; }
-.ansi-cyan-intense-fg { color: #258F8F; }
-.ansi-cyan-intense-bg { background-color: #258F8F; }
-.ansi-white-fg { color: #C5C1B4; }
-.ansi-white-bg { background-color: #C5C1B4; }
-.ansi-white-intense-fg { color: #A1A6B2; }
-.ansi-white-intense-bg { background-color: #A1A6B2; }
-
-.ansi-bold { font-weight: bold; }
-
-    </style>
-<style type="text/css">
-    /*This file contains any manual css for this page that needs to override the global styles.
-This is only required when different pages style the same element differently. This is just
-a hack to deal with our current css styles and no new styling should be added in this file.*/
-
-#ipython-main-app {
-    position: relative;
-}
-#jupyter-main-app {
-    position: relative;
-}
-
-    </style>
 
 
 <style type="text/css">
@@ -13132,7 +13080,6 @@ div#notebook {
 <h1 id="Deep-drama">Deep drama<a class="anchor-link" href="#Deep-drama">&#182;</a></h1><p>Here, we write 21. century classical Greek drama based on the works of Sophocles, Euripides, Aristophanes and Aischylos.</p>
 <p>For this we regress a single character on a vector of previous characters using a sequence model (a long short-term memory model). 
 The trained network is then used to predict a new sequence of characters, i.e. to hopefully write classical Greek drama for us.</p>
-<p>Enjoy!</p>
 
 </div>
 </div>
@@ -13159,7 +13106,7 @@ The trained network is then used to predict a new sequence of characters, i.e. t
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Get the drama from project Gutenberg.</p>
+<p>The dramas are downloaded from the Gutenberg project for which we can use the <code>gutenbergr</code> package.</p>
 
 </div>
 </div>
@@ -13169,7 +13116,7 @@ The trained network is then used to predict a new sequence of characters, i.e. t
 <div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-r"><pre><span></span><span class="nf">gutenberg_works</span><span class="p">(</span><span class="nf">str_detect</span><span class="p">(</span><span class="n">author</span><span class="p">,</span> <span class="s">&quot;Sophocles|Euripides|Aeschylus|Aristophanes&quot;</span><span class="p">))</span> <span class="o">%&gt;%</span> <span class="n">.[1</span><span class="o">:</span><span class="m">20</span><span class="p">,</span><span class="n">]</span>
+<div class=" highlight hl-r"><pre><span></span><span class="nf">gutenberg_works</span><span class="p">(</span><span class="nf">str_detect</span><span class="p">(</span><span class="n">author</span><span class="p">,</span> <span class="s">&quot;Sophocles|Euripides|Aeschylus|Aristophanes&quot;</span><span class="p">))</span> <span class="o">%&gt;%</span> <span class="n">.</span><span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">20</span><span class="p">,]</span>
 </pre></div>
 
     </div>
@@ -13342,8 +13289,8 @@ Using mirror http://aleph.gutenberg.org
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="n">dataset</span> <span class="o">&lt;-</span> <span class="nf">map</span><span class="p">(</span>
   <span class="nf">seq</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="nf">length</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">-</span> <span class="n">maxlen</span> <span class="o">-</span> <span class="m">1</span><span class="p">,</span> <span class="n">by</span> <span class="o">=</span> <span class="m">3</span><span class="p">),</span> 
-  <span class="o">~</span><span class="nf">list</span><span class="p">(</span><span class="n">sent</span> <span class="o">=</span> <span class="n">text[.x</span><span class="o">:</span><span class="p">(</span><span class="n">.x</span> <span class="o">+</span> <span class="n">maxlen</span> <span class="o">-</span> <span class="m">1</span><span class="p">)</span><span class="n">]</span><span class="p">,</span> 
-        <span class="n">nextc</span> <span class="o">=</span> <span class="n">text[.x</span> <span class="o">+</span> <span class="n">maxlen]</span><span class="p">))</span> <span class="o">%&gt;%</span>
+  <span class="o">~</span><span class="nf">list</span><span class="p">(</span><span class="n">sent</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">.x</span><span class="o">:</span><span class="p">(</span><span class="n">.x</span> <span class="o">+</span> <span class="n">maxlen</span> <span class="o">-</span> <span class="m">1</span><span class="p">)],</span> 
+        <span class="n">nextc</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">.x</span> <span class="o">+</span> <span class="n">maxlen</span><span class="p">]))</span> <span class="o">%&gt;%</span>
     <span class="n">transpose</span>
 </pre></div>
 
@@ -13369,8 +13316,8 @@ Using mirror http://aleph.gutenberg.org
 <span class="n">y</span> <span class="o">&lt;-</span> <span class="nf">array</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="nf">c</span><span class="p">(</span><span class="nf">length</span><span class="p">(</span><span class="n">dataset</span><span class="o">$</span><span class="n">sent</span><span class="p">),</span> <span class="nf">length</span><span class="p">(</span><span class="n">chars</span><span class="p">)))</span>
 <span class="nf">for</span><span class="p">(</span><span class="n">i</span> <span class="n">in</span> <span class="nf">seq</span><span class="p">(</span><span class="nf">length</span><span class="p">(</span><span class="n">dataset</span><span class="o">$</span><span class="n">sent</span><span class="p">)))</span>
 <span class="p">{</span>
-    <span class="n">x[i</span><span class="p">,,</span><span class="n">]</span> <span class="o">&lt;-</span> <span class="nf">sapply</span><span class="p">(</span><span class="n">chars</span><span class="p">,</span> <span class="nf">function</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="nf">as.integer</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">dataset</span><span class="o">$</span><span class="n">sent[[i]]</span><span class="p">))</span>
-    <span class="n">y[i</span><span class="p">,</span><span class="n">]</span>  <span class="o">&lt;-</span> <span class="nf">as.integer</span><span class="p">(</span><span class="n">chars</span> <span class="o">==</span> <span class="n">dataset</span><span class="o">$</span><span class="n">nextc[[i]]</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">,,]</span> <span class="o">&lt;-</span> <span class="nf">sapply</span><span class="p">(</span><span class="n">chars</span><span class="p">,</span> <span class="nf">function</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="nf">as.integer</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">dataset</span><span class="o">$</span><span class="n">sent</span><span class="p">[[</span><span class="n">i</span><span class="p">]]))</span>
+    <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">,]</span>  <span class="o">&lt;-</span> <span class="nf">as.integer</span><span class="p">(</span><span class="n">chars</span> <span class="o">==</span> <span class="n">dataset</span><span class="o">$</span><span class="n">nextc</span><span class="p">[[</span><span class="n">i</span><span class="p">]])</span>
 <span class="p">}</span>
 </pre></div>
 
@@ -13472,21 +13419,21 @@ Epoch: 09 ... I haven&#39;t died yet.
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="n">idx</span> <span class="o">&lt;-</span> <span class="nf">sample</span><span class="p">(</span><span class="nf">seq</span><span class="p">(</span><span class="nf">length</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">-</span> <span class="n">maxlen</span> <span class="o">-</span> <span class="m">1</span><span class="p">),</span> <span class="m">1</span><span class="p">)</span>
-<span class="n">string</span> <span class="o">&lt;-</span> <span class="n">text[idx</span><span class="o">:</span><span class="p">(</span><span class="n">idx</span> <span class="o">+</span> <span class="n">maxlen</span> <span class="o">-</span> <span class="m">1</span><span class="p">)</span><span class="n">]</span>
+<span class="n">string</span> <span class="o">&lt;-</span> <span class="n">text</span><span class="p">[</span><span class="n">idx</span><span class="o">:</span><span class="p">(</span><span class="n">idx</span> <span class="o">+</span> <span class="n">maxlen</span> <span class="o">-</span> <span class="m">1</span><span class="p">)]</span>
 <span class="n">generated</span> <span class="o">&lt;-</span> <span class="s">&quot;&quot;</span>
 <span class="nf">for</span><span class="p">(</span><span class="n">i</span> <span class="n">in</span> <span class="nf">seq</span><span class="p">(</span><span class="m">400</span><span class="p">))</span>
 <span class="p">{</span>
     <span class="c1"># Convert the string to a feature matrix</span>
     <span class="n">z</span> <span class="o">&lt;-</span> <span class="nf">sapply</span><span class="p">(</span><span class="n">chars</span><span class="p">,</span> <span class="nf">function</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="p">{</span> <span class="nf">as.integer</span><span class="p">(</span><span class="n">e</span> <span class="o">==</span> <span class="n">string</span><span class="p">)</span> <span class="p">})</span>
     <span class="n">z</span> <span class="o">&lt;-</span> <span class="nf">array_reshape</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="nf">dim</span><span class="p">(</span><span class="n">z</span><span class="p">)))</span>
-    <span class="n">ni</span> <span class="o">&lt;-</span> <span class="nf">predict</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span> <span class="o">%&gt;%</span> <span class="nf">rmultinom</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="n">prob</span> <span class="o">=</span> <span class="n">.)</span> <span class="o">%&gt;%</span> <span class="nf">which.max</span><span class="p">()</span>
+    <span class="n">ni</span> <span class="o">&lt;-</span> <span class="nf">predict</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span> <span class="o">%&gt;%</span> <span class="nf">rmultinom</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">1</span><span class="p">,</span> <span class="n">prob</span> <span class="o">=</span> <span class="n">.</span><span class="p">)</span> <span class="o">%&gt;%</span> <span class="nf">which.max</span><span class="p">()</span>
     <span class="c1"># save the predicted character</span>
-    <span class="n">generated</span> <span class="o">&lt;-</span> <span class="nf">str_c</span><span class="p">(</span><span class="n">generated</span><span class="p">,</span> <span class="n">chars[ni]</span><span class="p">,</span> <span class="n">collapse</span> <span class="o">=</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">generated</span> <span class="o">&lt;-</span> <span class="nf">str_c</span><span class="p">(</span><span class="n">generated</span><span class="p">,</span> <span class="n">chars</span><span class="p">[</span><span class="n">ni</span><span class="p">],</span> <span class="n">collapse</span> <span class="o">=</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
     <span class="c1"># append the predicted char to the string and remove its first char</span>
-    <span class="n">string</span>  <span class="o">&lt;-</span> <span class="nf">c</span><span class="p">(</span><span class="n">string[</span><span class="m">-1</span><span class="n">]</span><span class="p">,</span> <span class="n">chars[ni]</span><span class="p">)</span>
+    <span class="n">string</span>  <span class="o">&lt;-</span> <span class="nf">c</span><span class="p">(</span><span class="n">string</span><span class="p">[</span><span class="m">-1</span><span class="p">],</span> <span class="n">chars</span><span class="p">[</span><span class="n">ni</span><span class="p">])</span>
 <span class="p">}</span>    
 
-<span class="nf">cat</span><span class="p">(</span><span class="nf">str_split</span><span class="p">(</span><span class="n">generated</span><span class="p">,</span> <span class="s">&#39;\n&#39;</span><span class="p">)</span><span class="n">[[1]]</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&quot;\n&quot;</span><span class="p">)</span>
+<span class="nf">cat</span><span class="p">(</span><span class="nf">str_split</span><span class="p">(</span><span class="n">generated</span><span class="p">,</span> <span class="s">&#39;\n&#39;</span><span class="p">)[[</span><span class="m">1</span><span class="p">]],</span> <span class="n">sep</span><span class="o">=</span><span class="s">&quot;\n&quot;</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -13526,7 +13473,7 @@ who
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Wow. This is beautiful! Does not look like Greek drama, but like Finnegan's wake though.</p>
+<p>This is beautiful! Does not look like Greek drama, but like Finnegan's wake though.</p>
 
 </div>
 </div>
