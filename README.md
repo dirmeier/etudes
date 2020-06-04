@@ -10,7 +10,7 @@
 The repository hosts some numerical etudes in the form of `jupyter` notebooks.
 Te notebooks are on probabilistic models, machine learning, optimization, numerical etudes, algorithms, etc...
 
-**I do not take warranty for the correctness or completeness of these.**
+**I do not take warranty for the correctness of these.**
 
 ## Études on probabilistic (graphical) models
 
@@ -29,6 +29,7 @@ Te notebooks are on probabilistic models, machine learning, optimization, numeri
 - [Pairwise binary Markov random fields](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/pb-mrf.ipynb) shows the application of undirected graphical models to expression data.
 - [Particle filter](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/particle_filter.ipynb) introduces recursive estimation using the Kalman and particle filters.
 - [Latent Dirichlet allocation](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/latent_dirichlet_allocation.ipynb) implements a topic model for several works of Aeschylos from the Gutenberg text corpus using Gibbs sampling.
+- [Sequential regression models](https://dirmeier.github.io/rstansequential/index.html) introduces a special class of ordinal regression models which assume a sequential response mechanism.
 - [Structure MCMC](https://nbviewer.jupyter.org/github/dirmeier/structure-learning-with-pymc/blob/master/structure_learning_with_pymc.ipynb) shows how `PyMC3` can be used to learn the structure of a Bayesian network.
 
 ## Études on numerical methods
