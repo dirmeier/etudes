@@ -42,13 +42,6 @@ Te notebooks are on probabilistic models, machine learning, optimization, numeri
 - [Regularized regression](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/regularized_regression.ipynb) shows how disciplined convex programming can be used to solve a regularized regression model (`cvxpy`).
 - [SVM](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/svm.ipynb) is an implementation of the Lagrangian dual formulation of the usual hinge-loss for SVMs in Python.
 
-## Études on deep learning
-
-- [Deep Drama](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/deep_drama.ipynb) implements a long short-term memory network for creating Greek drama. It uses drama from Euripides, Sophocles, Aristophanes and
- Aischylos from the Gutenberg project to train a recurrent neural network and then uses the trained model to *write* drama. In that sense it acts similar to other sequence models, just like HMMs. The network is implemented in R's `Keras` interface.
-- [Single cell autoencoder](https://github.com/dirmeier/etudes/tree/master/sc-denoising-autoencoder.ipynb) uses deep-convolutional autoencoders to extract features from single-cell imaging data.
-- [Single cell GAN](https://github.com/dirmeier/etudes/tree/master/sc-gan.ipynb) uses DC-Wasserstein-GANs to create artificial single-cell microscopy images.
-
 ## Études on other stuff
 
 - [Lady tasting tea](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/lady_tasting_tea.ipynb) is a Bayesian analysis of Fisher's *Lady testing tea* experiment
