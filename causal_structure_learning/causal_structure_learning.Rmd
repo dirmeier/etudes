@@ -21,9 +21,9 @@ output:
 knitr::opts_chunk$set(comment=NA, warning = FALSE, error = FALSE, fig.align = "center")
 ```
 
-Learning cause-effect mechanisms among a set of random variables is not only of great epistemological interest, but also a fascinating statistical problem. In this notebook we implement a graph variational autoencoder (DAG-GNN by @yu2019dag), to learn the DAG of a structural equations model and compare it to greedy equivalent search (GES, @chickering2002optimal) which is one of the state-of-the-art methods for causal discovery.
+Learning cause-effect mechanisms among a set of random variables is not only of great epistemological interest, but also a fascinating statistical problem. In this notebook we implement a graph variational autoencoder (DAG-GNN by @yu2019dag) to learn the DAG of a structural equations model and compare it to greedy equivalent search (GES, @chickering2002optimal) which is one of the state-of-the-art methods for causal discovery.
 
-Some useful references are [@peters2017elements,@drton2017structure,@heinze2018causal]. Feedback and comments are welcome!
+Some useful references are @peters2017elements, @drton2017structure or @heinze2018causal. Feedback and comments are welcome!
 
 ```{r}
 suppressMessages({
@@ -355,7 +355,7 @@ h(tf$convert_to_tensor(A, dtype="float32"), 1)
 As a helper we also define a method to plot a matrix as graph. I personally like `ggraph` for plotting graphs the best.
 
 ```{r}
-plot.adj <- function(adj, title="") {
+plot.adj <- function(adj) {
   igraph::graph_from_adjacency_matrix(adj, weighted = TRUE) %>%
     ggraph::ggraph(layout = "sugiyama") +
     ggraph::geom_edge_link(
@@ -366,17 +366,15 @@ plot.adj <- function(adj, title="") {
       arrow = arrow(length = unit(3, "mm"))
     ) +
     ggraph::geom_node_text(ggplot2::aes(label = name), size = 4) +
-    ggraph::theme_graph() +
-    ggplot2::ggtitle(title) + 
-    ggplot2::theme(title = element_text(size=8))
+    ggraph::theme_graph()
 }
 ```
 
 The graph below is the causal structure that we want to learn, i.e., an edge $X_i \rightarrow X_j$ encodes a cause-effect relationship.
 
 ```{r fig.width=5, fig.height=3, fig.align="center"}
-true.dag <- plot.adj(A, "True DAG")
-true.dag
+true.dag <- plot.adj(A)
+true.dag + ggplot2::ggtitle("True DAG")
 ```
 
 We simulate data using the equation of the SEM above as:
@@ -399,19 +397,19 @@ From the fitted object we extract the graph first, turn it into a CPDAG and plot
 
 ```{r, fig.width=5, fig.height=3, fig.align="center"}
 bn.ges.cpdag <- pcalg::getGraph(bn.ges$essgraph) %>%
-    dag2cpdag() %>%
+    pcalg::dag2cpdag() %>%
     igraph::graph_from_graphnel() %>%
     igraph::as_adj() %>%
     as.matrix() %>% 
     plot.adj()
 
-bn.ges.cpdag + ggtitle("GES CPDAG")
+bn.ges.cpdag + ggplot2::ggtitle("GES CPDAG")
 ```
 
 That looks good. GES managed to correctly infer all the edges of the true DAG (including v-structures). This was expected, since the sample size is fairly high. Next we fit the autoencoder. DAG-GNN has several tuning paramameters. When testing the method, Lagrange multipliers $c$ and $\lambda$ with high values yielded the best results. Choices of $\alpha$ did not significantly change the output of the method. 
 
 ```{r}
-bn.gnn <- train(X, n_epochs = 10000, c=1000000, lambda=1000000, learning_rate=0.1)
+bn.gnn <- train(X, n_epochs = 1000, c=1000000, lambda=1000000, learning_rate=0.1)
 ```
 
 Let's check if this is really a DAG first.
@@ -431,7 +429,7 @@ bn.daggnn.cpdag <- igraph::graph_from_adjacency_matrix(bn.gnn, weighted = TRUE) 
   as.matrix() %>% 
   plot.adj()
 
-bn.daggnn.cpdag + ggtitle("DAG-GNN CPDAG")
+bn.daggnn.cpdag + ggplot2::ggtitle("DAG-GNN CPDAG")
 ```
 
 DAG-GNN, in this example, unfortunately wasn't able to recover the true DAG from the data and was easily outperformed by GES. I am not sure if this is due to a bug in the implementation, the data, the parameterization, or whatever (feedback on bugs would be welcome).
