@@ -30,13 +30,13 @@ Te notebooks are on probabilistic models, machine learning, optimization, numeri
 - [Particle filter](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/particle_filter.ipynb) introduces recursive estimation using the Kalman and particle filters.
 - [Latent Dirichlet allocation](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/latent_dirichlet_allocation.ipynb) implements a topic model for several works of Aeschylos from the Gutenberg text corpus using Gibbs sampling.
 - [Sequential regression models](https://dirmeier.github.io/rstansequential/index.html) introduces a special class of ordinal regression models which assume a sequential response mechanism.
-- [Structure MCMC](https://nbviewer.jupyter.org/github/dirmeier/structure-learning-with-pymc/blob/master/structure_learning_with_pymc.ipynb) shows how `PyMC3` can be used to learn the structure of a Bayesian network.
+- [Structure MCMC](https://nbviewer.jupyter.org/github/dirmeier/structure-learning-with-pymc/blob/master/docs/structure_learning_with_pymc.ipynb) shows how `PyMC3` can be used to learn the structure of a Bayesian network.
 
 ## Études on numerical methods
 
 - [ADMM](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/admm.ipynb) implements the LASSO using the alternative direction method of multipliers.
 - [Conjugate Gradients](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/conjugate_gradients.ipynb) is an implementation of a numerical solver for linear equations with positive-definite matrices in Python.
-- [Mixed models](https://nbviewer.jupyter.org/github/dirmeier/mixed-models/blob/master/mixed-models.ipynb) shows concise reference implementations for optimization of the objective of (generalized) linear mixed models.
+- [Mixed models](https://nbviewer.jupyter.org/github/dirmeier/mixed-models/blob/master/docs/mixed-models.ipynb) shows concise reference implementations for optimization of the objective of (generalized) linear mixed models.
 - [Non-linear component analysis](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/non_linear_component_analysis.ipynb) does an approximation to a kernel PCA using Nystroem features (Williams *et al*. (2001)) and random Fourier features (Rahimi *et al* (2008)). The advantage of both is reduced runtime and approximately as good results as a full kernel-PCA. The implementation is in Python.
 - [QR-decomposition](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/qr_decomposition.ipynb) can be used for solving a linear regression model instead of the analytical solution. This is supposedly more stable. The implementation is in Python.
 - [Regularized regression](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/regularized_regression.ipynb) shows how disciplined convex programming can be used to solve a regularized regression model (`cvxpy`).
