@@ -3,12 +3,11 @@
 [![Project Status](http://www.repostatus.org/badges/latest/concept.svg)](http://www.repostatus.org/#concept)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/dirmeier/etudes/master)
 
-:notes: A collection of numerical études.
+:notes: A collection of études on probabilistic models.
 
 ## About
 
-The repository hosts some numerical etudes in the form of `jupyter` notebooks.
-Te notebooks are on probabilistic models, machine learning, optimization, numerical etudes, algorithms, etc...
+The repository hosts some etudes on probabilistic models in the form of `jupyter` notebooks.
 
 **I do not take warranty for the correctness of these.**
 
@@ -19,19 +18,23 @@ Te notebooks are on probabilistic models, machine learning, optimization, numeri
 - [02 Gaussian process regression](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/gaussian_process_regression.ipynb) introduces non-parametric Bayesian regression.
 - [03 Gaussian process classification](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/gaussian_process_classification.ipynb) *extends* Gaussian process regression to classification scenarios.
 - [04 Student-t process regression](https://nbviewer.jupyter.org/github/dirmeier/probabilistic-modelling-notebooks/blob/master/t_process_regression.ipynb) uses a *t-process* instead of a GP for regression.
-- [Bayesian GPLVMs](https://nbviewer.jupyter.org/github/dirmeier/probabilistic-modelling-notebooks/blob/master/gplvm.ipynb) implements a nonparametric Bayesian approach for dimension reduction using GPs.
-- [Causal structure learning using VAEs](https://dirmeier.github.io/etudes/causal_structure_learning.html) implements a novel graph variational autoencoder and compares it to *greedy equivalence search*, one of the state-of-the-art methods for causal discovery.
-- [Gaussian Graphical Models](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/gaussian_graphical_models.ipynb) implements the *graphical LASSO* for sparse precision matrix estimation.
 - [01 Mixture models](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/mixture_models.ipynb) implements a Gaussian mixture model using Expectation Maximization.
 - [02 Bayesian mixture models](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/bayesian_mixture_models.ipynb) treats mixture models in a Bayesian fashion. Inference is done with Gibbs sampling and Stan.
 - [03 Dirichlet process mixture models](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/dirichlet_process_mixture_models.ipynb) extends the Bayesian mixture to the infinite case, i.e. when we don't know the number of clusters beforehand. We use the *Chinese restaurant process* and the *stick-breaking construction* for inference.
 - [04 Indian Buffets](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/indian_buffets.ipynb) shows the generative process of binary matrices with possibly infinitely many numbers of columns.
+- [Bayesian GPLVMs](https://nbviewer.jupyter.org/github/dirmeier/probabilistic-modelling-notebooks/blob/master/gplvm.ipynb) implements a nonparametric Bayesian approach for dimension reduction using GPs.
+- [Causal structure learning using VAEs](https://dirmeier.github.io/etudes/causal_structure_learning.html) implements a novel graph variational autoencoder and compares it to *greedy equivalence search*, one of the state-of-the-art methods for causal discovery.
+- [Custom Greta distributions](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/custom_greta_distributions.ipynb) shows how one can implement custom distributions (likelihoods) for Greta.
+- [Gaussian Graphical Models](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/gaussian_graphical_models.ipynb) implements the *graphical LASSO* for sparse precision matrix estimation.
 - [Kalman filter](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/extended_kalman_filter.ipynb) shows the application of undirected graphical models to expression data.
+- [Latent Dirichlet allocation](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/latent_dirichlet_allocation.ipynb) implements a topic model for several works of Aeschylos from the Gutenberg text corpus using Gibbs sampling.
+- [Normalizing flows](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/normalizing_flows.ipynb) shows how TensorFlow Probability can be used to implement a custom normalizing flow.
 - [Pairwise binary Markov random fields](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/pb-mrf.ipynb) shows the application of undirected graphical models to expression data.
 - [Particle filter](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/particle_filter.ipynb) introduces recursive estimation using the Kalman and particle filters.
-- [Latent Dirichlet allocation](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/latent_dirichlet_allocation.ipynb) implements a topic model for several works of Aeschylos from the Gutenberg text corpus using Gibbs sampling.
 - [Sequential regression models](https://dirmeier.github.io/rstansequential/index.html) introduces a special class of ordinal regression models which assume a sequential response mechanism.
 - [Structure MCMC](https://nbviewer.jupyter.org/github/dirmeier/structure-learning-with-pymc/blob/master/docs/structure_learning_with_pymc.ipynb) shows how `PyMC3` can be used to learn the structure of a Bayesian network.
+- [Truncated Stick breaking in Greta](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/truncated_stick_breaking_in_greta.ipynb) shows how one can implement truncated Dirichlet process mixture models in Greta.
+
 
 ## Études on numerical methods
 
@@ -47,11 +50,6 @@ Te notebooks are on probabilistic models, machine learning, optimization, numeri
 
 - [Lady tasting tea](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/lady_tasting_tea.ipynb) is a Bayesian analysis of Fisher's *Lady testing tea* experiment
 - [SBC](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/simulation_based_calibration.ipynb) shows a method to validate Bayesian posterior inferences.
-
-## Études on probabilistic programs
-
-- [Custom Greta distributions](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/custom_greta_distributions.ipynb) shows how one can implement custom distributions (likelihoods) for Greta.
-- [Truncated Stick breaking in Greta](https://nbviewer.jupyter.org/github/dirmeier/etudes/blob/master/truncated_stick_breaking_in_greta.ipynb) shows how one can implement truncated Dirichlet process mixture models in Greta.
 
 ## Author
 

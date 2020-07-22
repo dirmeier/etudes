@@ -1,0 +1,66 @@
+---
+title: "Normalizing flows with TensorFlow Probability"
+author: "Simon Dirmeier <simon.dirmeier @ web.de>"
+date: "June 2020"
+bibliography: ./references.bib
+link-citations: true
+output:
+  html_document:
+    theme: lumen
+    css: ../css/custom.css
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    number_sections: no
+    highlight: pygments
+---
+
+```{r knitr_init, include=FALSE, echo=FALSE, cache=FALSE, message=FALSE}
+knitr::opts_chunk$set(comment=NA, warning = FALSE, error = FALSE, fig.align = "center")
+
+library(reticulate)
+reticulate::use_condaenv("pymc")
+```
+
+In this notebook, we will use normalizing flows (NFs) for density estimation as well as variational inference using Tensorflow Probability. NFs transform simple *base distributions* into rich families of distributions that can be used for density estimation, variational inference, reparameterization of MCMC, or data generation.
+
+Some useful references are @peters2017elements, @drton2017structure or @heinze2018causal. Feedback and comments are welcome!
+
+# Background
+
+Normalizing flows express the distribution of a random vector $\mathbf{y} \in \mathbb{R}^p$ by appplying a series of transformations $T$ to some random vector $\mathbf{x}$ sampled from $P(\mathbf{x})$:
+
+\begin{align}
+
+
+\end{align}
+
+# Implementation
+
+```{python}
+import numpy as np
+import tensorflow as tf
+import tensorflow_probability as tfp
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+tfk = tf.keras
+tfkl = tfk.layers
+tfd = tfp.distributions
+tfb = tfp.bijectors
+
+sns.set_style("white")
+sns.set_context("notebook")
+```
+
+# License
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png" /></a>
+
+The notebook is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
+
+
+# References
