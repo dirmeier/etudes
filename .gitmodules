@@ -1,0 +1,9 @@
+[submodule "_structure_learning_with_pymc"]
+	path = _structure_learning_with_pymc
+	url = https://github.com/dirmeier/structure-learning-with-pymc
+[submodule "_mixed_models"]
+	path = _mixed_models
+	url = https://github.com/dirmeier/mixed-models
+[submodule "_sequential_models"]
+	path = _sequential_models
+	url = https://github.com/dirmeier/rstansequential
