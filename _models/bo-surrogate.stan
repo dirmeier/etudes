@@ -1,5 +1,5 @@
 data {
-	int<lower=1> N;	
+	int<lower=1> N;
 	real x[N];
 	vector[N] y;
 
@@ -17,7 +17,7 @@ model {}
 
 generated quantities {
 	vector[N_star] f_star;
-	vector[N_star] f_star_cov;	
+	vector[N_star] f_star_cov;
 
     {
       matrix[N, N] K =  cov_exp_quad(x, alpha, rho)
