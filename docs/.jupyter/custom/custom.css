@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css?family=Merriweather|Roboto|Inconsolata');
+
+
+.MathJax_Display {
+  margin-top: 15px !important;
+  margin-bottom: 15px !important;
+}
+
+
+body {
+  font-family: "Merriweather", serif;
+  font-size: 14px  !important;
+  color: #333333  !important;
+  line-height: 1.6  !important;
+  text-align: justify  !important;
+}
+
+
+p {
+ color: #333333  !important;
+}
+
+h1, h2, h3 {
+  font-family: "Merriweather", serif  !important;
+  font-style: italic;
+  font-weight: 400 !important;
+  margin-bottom: 2rem;
+  margin-top: 2rem;
+  line-height: 1.1 !important;
+  color: #333333 !important;
+}
+
+
+h1 {
+   font-size: 3rem !important;
+}
+
+
+h2 {
+  font-size: 2.5rem !important;
+}
+
+
+h3 {
+  font-size: 2rem !important;
+}
+
+
+.blue, a, a:hover {
+  color: #1F407A;
+}
