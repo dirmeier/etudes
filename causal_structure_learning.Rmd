@@ -7,7 +7,7 @@ link-citations: true
 output:
   html_document:
     theme: lumen
-    css: ../css/custom.css
+    css: ./css/custom.css
     toc: yes
     toc_depth: 1
     toc_float:
