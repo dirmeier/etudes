@@ -1,0 +1,399 @@
+---
+title: "Dirichlet process mixture models"
+author: "Simon Dirmeier <simon.dirmeier @ web.de>"
+date: "January 2019"
+bibliography: ./references/references.bib
+link-citations: true
+output:
+  html_document:
+    theme: lumen
+    css: ./css/custom.css
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    number_sections: no
+    highlight: pygments
+---
+
+```{r knitr_init, include=FALSE, echo=FALSE, cache=FALSE, message=FALSE}
+knitr::opts_chunk$set(
+  comment = NA, warning = FALSE, error = FALSE,
+  fig.align = "center", fig.width = 6, fig.height = 3, dpi = 360
+)
+```
+
+Finite dimensional mixture models represent a distribution as a weighted sum of a fixed number of $K$ components. We can either find $K$ using model selection, i.e. with AIC, BIC, WAIC, etc., or try to automatically infer this number. Nonparametric mixture models do exactly this. 
+
+Here we implement a nonparametric Bayesian mixture model using *Gibbs sampling*. We use a *Chinese restaurant process* prior and stick-breaking construction to sample from a *Dirichlet process* (see for instance @hjort2010bayesian, @orbanz2012lecture, @murphy2012machine and @kamper2013gibbs. 
+
+We'll implement the Gibbs sampler using the CRP ourselves, since Stan doesn't allow us to do this and then use the stick-breaking construction with Stan using a truncated DP.
+
+```{r}
+suppressMessages({
+  library(tidyverse)
+  library(rlang)
+  library(ggthemes)
+  library(colorspace)
+
+  library(rstan)
+  library(bayesplot)
+  library(MCMCpack)
+
+  library(e1071)
+  library(mvtnorm)
+})
+
+set.seed(23)
+options(mc.cores = parallel::detectCores())
+```
+
+# Infinite mixtures
+
+Bayesian mixture models are hierarchical models that can generally be formalized like this:
+
+\begin{align*}
+\boldsymbol \theta_k & \sim \mathcal{G}_0\\
+\boldsymbol \pi &  \sim \text{Dirichlet}(\boldsymbol \alpha_0)\\
+z_i &  \sim \text{Discrete}(\boldsymbol \pi)\\
+\mathbf{x}_i \mid z_i = k &  \sim {P}(\boldsymbol \theta_k)
+\end{align*}
+
+where $\mathcal{G}_0$ is some base distribution for the model parameters.
+
+The DP on contrast, as any BNP model, puts priors on structures that accomodate infinite sizes. The resulting posteriors give a distribution on structures that grow with new observations. A mixture model using an possibly infinite number of components could look like this:
+
+\begin{align*}
+\mathcal{G} & \sim \mathcal{DP}(\alpha, \mathcal{G}_0)\\
+\boldsymbol \theta_i  & \sim \mathcal{G}\\
+\mathbf{x}_i&  \sim {P}(\boldsymbol \theta_i)
+\end{align*}
+
+where $\mathcal{G}_0$ is the same base measure as above and $\mathcal{G}$ is a sample from the DP, i.e. also a random measure.
+
+# The Chinese restaurant process
+
+One way, and possibly the easiest, to implement a DPMM is using a *Chinese restaurant process* (CRP) which is a distribution over partitions. The hierarchical model using a CRP is:
+
+\begin{align*}
+\boldsymbol \theta_k & \sim \mathcal{G}_0 \\
+z_i \mid \mathbf{z}_{1:i-1} & \sim \text{CRP} \\
+\mathbf{x}_i & \sim P(\boldsymbol \theta_{z_i})
+\end{align*}
+
+where $\text{CRP}$ is a prior on possible infinitely many classes. Specifically the CRP is defined as:
+
+\begin{align*}
+P(z_i = k \mid \mathbf{z}_{-i}) = \left\{
+                \begin{array}{ll}
+                  \frac{N_k}{N - 1 + \alpha}\\
+                  \frac{\alpha}{N - 1 + \alpha}\\
+                \end{array}
+              \right.
+\end{align*}
+
+where $N_k$ is the number of customers at table $k$ and $\alpha$ some hyperparameter.
+
+For the variables of interest, $\boldsymbol  \theta_k$ and $\boldsymbol z$ the posterior is:
+
+\begin{align*}
+P(\boldsymbol \theta, \boldsymbol z \mid \mathbf{X}) \propto P(\mathbf{X} \mid \boldsymbol \theta, \boldsymbol z ) P(\boldsymbol \theta) P ( \boldsymbol z )
+\end{align*}
+
+Using a Gibbs sampler, we iterate over the following two steps:
+
+1) sample $z_i \sim P(z_i \mid \mathbf{z}_{-i}, \mathbf{X}, \boldsymbol \theta) \propto P(z_i \mid \mathbf{z}_{-i}) P(\mathbf{x}_i \mid \boldsymbol \theta_{z_i}, \mathbf{X}_{-i}, \mathbf{z})$
+
+2) sample $\boldsymbol \theta_k \sim P(\boldsymbol \theta_k \mid \mathbf{z}, \mathbf{X})$
+
+So we alternate sampling assignments of data to classes and sampling the parameters of the data distribution given the class assignments. The major difference here compared to the finite case is the way of sampling $z_i$ which we do using the CRP in the infinite case. The CRP itself is defined by $ P(z_i \mid \mathbf{z}_{-i}) $, so replacing this by a usual finite sample would give us a finite mixture. Evaluation of the likelihoods in the first step is fairly straightforward as we will see. Updating the model parameters in the second step is conditional on every class, an by that also not too hard to do.
+
+# Stick-breaking construction
+
+With the CRP with put a prior distribution on the possibly infinite number of class assignments. An alternative approach is to use *stick-breaking* construction. The advantage here is that we could use `Stan` using a truncated DP, thus we don't need to implement the sampler ourselves. If we, instead of putting a CRP prior on the latent labels, put a prior on the possibly infinite sequence of mixing weights $\boldsymbol \pi$ we arrive at the *stick-breaking* construction. The hierarchical model now looks like this:
+
+\begin{align*}
+\nu_k &\sim \text{Beta}(1, \alpha) \\
+\pi_k & = \nu_k  \prod_{j=1}^{k-1} (1 - \nu_j) \\
+\boldsymbol \theta_k & \sim G_0 \\
+\mathbf{x}_i & \sim \sum_k \pi_k P(\boldsymbol \theta_k)
+\end{align*}
+
+where $N_k$ is the number of customers at table $k$ and $\alpha$ some hyperparameter. The distribution of the mixing weights is sometimes denoted as
+
+$$
+\boldsymbol \pi \sim \text{GEM}(\alpha)
+$$
+
+# Gaussian DPMMs
+
+In the following section, we derive a Gaussian Dirichlet process mixture using the CRP with a Gibbs sampler and the stick-breaking construction using Stan.
+
+## CRP
+
+In the Gaussian case the hierarchical model using the CRP has the following form:
+
+\begin{align*}
+\boldsymbol \Sigma_k & \sim \mathcal{IW}\\
+\boldsymbol \mu_k & \sim \mathcal{N}(\boldsymbol \mu_0, \boldsymbol \Sigma_0) \\
+z_i \mid z_{1:i-1} & \sim \text{CRP} \\
+\mathbf{x}_i & \sim \mathcal{N}(\boldsymbol \mu_{z_i}, \boldsymbol \Sigma_{z_i})
+\end{align*}
+
+Let's derive the Gibbs sampler for a infinite Gaussian mixture using the CRP. First we set data $\mathbf{X}$ some constants. We create a very simple data set to avoid problems with identifiability and label switching. For a treatment of the topic see Michael Betancourt's [case study](https://betanalpha.github.io/assets/case_studies/identifying_mixture_models.html). $n$ is the number of samples, $p$ is the dimensionality of the Gaussian, $\alpha$ is the Dirichlet concentration.
+
+```{r}
+n <- 100
+p <- 2
+alpha <- .5
+```
+
+Latent class assignments (`Z`), the current table index and the number of customers per table:
+
+```{r}
+Z <- integer(n)
+X <- matrix(0, n, p)
+curr.tab <- 0
+tables <- c()
+```
+
+Parameters of the Gaussians:
+
+```{r}
+sigma <- .1
+mus <- NULL
+```
+
+Then we create a random assignment of customers to tables with probability $P(z_i \mid Z_{-i})$, i.e. we use the CRP to put data into classes. Note that we don't know the number of classes that comes out!
+
+```{r}
+for (i in seq(n))
+{
+  probs <- c(tables / (i - 1 + alpha), alpha / (i - 1 + alpha))
+  table <- rdiscrete(1, probs)
+  if (table > curr.tab) {
+    curr.tab <- curr.tab + 1
+    tables <- c(tables, 0)
+    mu <- mvtnorm::rmvnorm(1, c(0, 0), 10 * diag(p))
+    mus <- rbind(mus, mu)
+  }
+  Z[i] <- table
+  X[i, ] <- mvtnorm::rmvnorm(1, mus[Z[i], ], sigma * diag(p))
+  tables[table] <- tables[table] + 1
+}
+```
+
+Let's see how many clusters and how many data points per clusters we have.
+
+```{r}
+data.frame(table(Z)) %>%
+  ggplot() +
+  geom_col(aes(Z, Freq), width = .35) +
+  theme_tufte() +
+  theme(
+    axis.text = element_text(colour = "black"),
+    axis.title = element_text(colour = "black")
+  ) +
+  xlab("Cluster") +
+  ylab("Frequency")
+```
+
+```{r}
+data.frame(X = X, Z = as.factor(Z)) %>%
+  ggplot() +
+  geom_point(aes(X.1, X.2, color = Z)) +
+  theme_tufte() +
+  theme(axis.text = element_text(colour = "black")) +
+  scale_color_discrete_diverging(palette = "Blue-Red", l1 = 1, l2 = 60) +
+  xlab(NULL) +
+  ylab(NULL) +
+  labs(color = "Cluster")
+```
+
+## Posterior inference using Gibbs sampling
+
+We randomly initialize the cluster assignments and set all customers to table 1. Hyperparameter $\alpha$ controls the probability of opening a new table.
+
+```{r}
+K <- 1
+zs <- rep(K, n)
+alpha <- 5
+tables <- n
+```
+
+We assume the covariances to be known.
+
+```{r}
+mu.prior <- matrix(c(0, 0), ncol = 2)
+sigma.prior <- diag(p)
+q.prior <- solve(sigma.prior)
+```
+
+Base distribution $\mathcal{G}_0$:
+
+```{r}
+sigma0 <- diag(p)
+prec0 <- solve(sigma0)
+mu0 <- rep(0, p)
+```
+
+To infer the posterior we would use the Gibbs sampler described above. Here, I am only interested in the most likely assignment, i.e. the MAP of $Z$.
+
+```{r}
+for (iter in seq(100))
+{
+  for (i in seq(n))
+  {
+    # look at data x_i and romove its statistics from the clustering
+    zi <- zs[i]
+    tables[zi] <- tables[zi] - 1
+    if (tables[zi] == 0) {
+      K <- K - 1
+      zs[zs > zi] <- zs[zs > zi] - 1
+      tables <- tables[-zi]
+      mu.prior <- mu.prior[-zi, ]
+    }
+
+    # compute posterior probabilitites P(z_i \mid z_-i, ...)
+    no_i <- seq(n)[-i]
+    probs <- sapply(seq(K), function(k) {
+      crp <- sum(zs[no_i] == k) / (n + alpha - 1)
+      lik <- mvtnorm::dmvnorm(X[i, ], mu.prior[k, ], sigma.prior)
+      crp * lik
+    })
+
+    # compute probability for opening up a new one
+    crp <- alpha / (n + alpha - 1)
+    lik <- mvtnorm::dmvnorm(X[i, ], mu0, sigma.prior + sigma0)
+    probs <- c(probs, crp * lik)
+    probs <- probs / sum(probs)
+
+    # sample new z_i according to the conditional posterior above
+    z_new <- which.max(probs)
+    if (z_new > K) {
+      K <- K + 1
+      tables <- c(tables, 0)
+      mu.prior <- rbind(mu.prior, mvtnorm::rmvnorm(1, mu0, sigma0))
+    }
+    zs[i] <- z_new
+    tables[z_new] <- tables[z_new] + 1
+
+    # compute conditional posterior P(mu \mid ...)
+    for (k in seq(K)) {
+      Xk <- X[zs == k, , drop = FALSE]
+      lambda <- solve(q.prior + tables[k] * q.prior)
+      nominator <- tables[k] * q.prior %*% apply(Xk, 2, mean)
+      mu.prior[k, ] <- mvtnorm::rmvnorm(1, lambda %*% nominator, lambda)
+    }
+  }
+}
+```
+
+Let's see if that worked out!
+
+```{r}
+data.frame(X = X, Z = as.factor(zs)) %>%
+  ggplot() +
+  geom_point(aes(X.1, X.2, col = Z)) +
+  theme_tufte() +
+  theme(axis.text = element_text(colour = "black")) +
+  scale_color_discrete_diverging(palette = "Blue-Red", l1 = 1, l2 = 60) +
+  xlab(NULL) +
+  ylab(NULL) +
+  labs(color = "Cluster")
+```
+
+Except for the lone guy on top the clustering worked nicely.
+
+## Stick breaking construction
+
+In order to make the DPMM with stick-breaking work in Stan, we need to supply a maximum number of clusters $K$ from which we can choose. Setting $K=n$ would mean that we allow that every data point defines its own cluster. For the sake of the exercise I'll set it the maximum number of clusters to $10$. The hyperparameter $\alpha$ parameterizes the Beta-distribution which we use to sample stick lengths. We use the same data we already generated above.
+
+```{r}
+K <- 10
+alpha <- 2
+```
+
+The model is a bit more verbose in comparison to the finite case. We only need to add the stick breaking part in the `transformed parameters`, the rest stays the same. We again use the LKJ prior for the correlation matrix of the single components and set a fixed prior scale of $1$. In order to get nice, unimodel posteriors, we also introduce an ordering of the mean values.
+
+```{r}
+stan.file <- "_models/dirichlet_process_mixture.stan"
+cat(readLines(stan.file), sep = "\n")
+```
+
+```{r stan1}
+fit <- stan(
+  stan.file,
+  data = list(K = K, n = n, x = X, p = p, alpha = alpha),
+  iter = 5000,
+  warmup = 1000,
+  chains = 1
+)
+```
+
+First we have a look at the traces for the means and mixing weights.
+
+```{r, fig.height=5}
+posterior <- extract(fit)
+
+data.frame(posterior$pi) %>%
+  set_names(paste0("PI_", 1:10)) %>%
+  tidyr::gather(key, value) %>%
+  ggplot() +
+  geom_histogram(aes(x = value, y = ..density.., fill = key), bins = 50) +
+  scale_y_continuous(breaks = scales::breaks_pretty(n = 3)) +
+  facet_grid(key ~ ., scales = "free_y") +
+  theme_tufte() +
+  theme(
+    axis.text.x = element_text(colour = "black"),
+    axis.text.y = element_blank()
+  ) +
+  scale_fill_discrete_diverging(palette = "Blue-Red", l1 = 1, l2 = 60) +
+  xlab(NULL) +
+  ylab(NULL) +
+  guides(fill = FALSE)
+```
+
+From the plot above it looks as if Stan believes it's sufficient to use three components as the means of the mixing weights of the seven other components are fairly low or even zero. However, let's extract all means of the posterior means and assign each data point to a cluster.
+
+```{r, message=FALSE, warning=FALSE, error=FALSE}
+probs <- purrr::map_dfc(seq(10), function(i) {
+  mu <- apply(posterior$mu[, i, ], 2, mean)
+  mvtnorm::dmvnorm(
+    X, mu, diag(2)
+  )
+})
+probs <- set_names(probs, paste0("Z", seq(10)))
+zs.stan <- apply(probs, 1, which.max)
+```
+
+And the final plot:
+
+```{r}
+data.frame(X = X, Z = as.factor(zs.stan)) %>%
+  ggplot() +
+  geom_point(aes(X.1, X.2, col = Z)) +
+  theme_tufte() +
+  theme(axis.text = element_text(colour = "black")) +
+  scale_color_discrete_diverging(palette = "Blue-Red", l1 = 1, l2 = 60) +
+  xlab(NULL) +
+  ylab(NULL) +
+  labs(color = "Cluster")
+```
+
+Using a truncated DP with Stan worked even better than our CRP implementation. Here, we managed to give every point its correct label.
+
+# License
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png" /></a>
+
+The notebook is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
+
+# Session info
+
+```{r}
+sessionInfo()
+```
+
+# References

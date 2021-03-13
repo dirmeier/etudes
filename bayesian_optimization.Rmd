@@ -18,8 +18,8 @@ output:
 ---
 
 ```{r knitr_init, include=FALSE, echo=FALSE, cache=FALSE, message=FALSE}
-knitr::opts_chunk$set(comment = NA, warning = FALSE, error = FALSE, fig.align = "center",
-                      fig.width=11, fig.height=4)
+knitr::opts_chunk$set(comment = NA, warning = FALSE, error = FALSE,
+                      fig.align = "center", fig.width=11, fig.height=4)
 ```
 
 Many real-world problems involve optimization of functions which are difficult, or costly, to evaluate. For instance, in deep learning, finding the optimal hyperparameters and architecture of a neural network is a cumbersome process that should ideally be automated with as little function evaluations (i.e. training the networks) as possible. For problems like these, Bayesian optimization (BO) offers a unifying framework where the function to evaluate is approximated using a surrogate model. 
