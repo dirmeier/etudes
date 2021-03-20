@@ -18,7 +18,6 @@ model {}
 generated quantities {
   vector[N_star] f_star;
   vector[N_star] f_star_cov;
-
   {
     matrix[N, N] K =  cov_exp_quad(x, alpha, rho)
        + diag_matrix(rep_vector(square(sigma), N));

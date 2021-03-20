@@ -24,23 +24,23 @@ knitr::opts_chunk$set(
 )
 ```
 
-Finite dimensional mixture models represent a distribution as a weighted sum of a fixed number of $K$ components. We can either find $K$ using model selection, i.e. with AIC, BIC, WAIC, etc., or try to automatically infer this number. Nonparametric mixture models do exactly this. 
+Finite dimensional mixture models represent a distribution as a weighted sum of a fixed number of $K$ components. We can either find $K$ using model selection, i.e. with AIC, BIC, WAIC, etc., or try to automatically infer this number. Nonparametric mixture models do exactly this.
 
-Here we implement a nonparametric Bayesian mixture model using *Gibbs sampling*. We use a *Chinese restaurant process* prior and stick-breaking construction to sample from a *Dirichlet process* (see for instance @hjort2010bayesian, @orbanz2012lecture, @murphy2012machine and @kamper2013gibbs. 
+Here we implement a nonparametric Bayesian mixture model using *Gibbs sampling*. We use a *Chinese restaurant process* prior and stick-breaking construction to sample from a *Dirichlet process* (see for instance @hjort2010bayesian, @orbanz2012lecture, @murphy2012machine and @kamper2013gibbs.
 
 We'll implement the Gibbs sampler using the CRP ourselves, since Stan doesn't allow us to do this and then use the stick-breaking construction with Stan using a truncated DP.
 
 ```{r}
 suppressMessages({
-  library(tidyverse)
-  library(rlang)
+  library(tidyverse)  
   library(ggthemes)
   library(colorspace)
 
   library(rstan)
   library(bayesplot)
-  library(MCMCpack)
 
+  library(MCMCpack)
+  library(rlang)
   library(e1071)
   library(mvtnorm)
 })

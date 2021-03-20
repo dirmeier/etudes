@@ -23,7 +23,20 @@ knitr::opts_chunk$set(comment = NA, warning = FALSE, error = FALSE,
 ```
 
 Gaussian processes (GPs) offer an elegant framework for non-parametric Bayesian regression
-by endowing a prior distribution over a function space. In this notebook we derive the basics of how they can be used for regression and machine learning. Most of the material is from [Rasmussen and Williams (2006)](http://www.gaussianprocess.org/gpml/). I also recommend Michael Betancourt's [Robust Gaussian Processes in Stan](https://betanalpha.github.io/assets/case_studies/gp_part1/part1.html) as a resource, for instance to learn more about hyperparameter inference which won't be covered here.
+by endowing a prior distribution over a function space. In this notebook we derive the basics of how they can be used for regression and machine learning. Most of the material is based on @rasmussen2006, but I also recommend @betancourt2020gp as a resource. Throughout this notebook, we will use [*Stan*](https://mc-stan.org/) to fit GPs. Feedback and comments are welcome!
+
+```{r}
+suppressMessages({
+  library(tidyverse)
+  library(ggthemes)
+  library(colorspace)
+
+  library(rstan)
+  library(bayesplot)
+})
+
+set.seed(23)
+```
 
 
 # License

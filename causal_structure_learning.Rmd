@@ -27,13 +27,16 @@ Some useful references are @peters2017elements, @drton2017structure or @heinze20
 
 ```{r}
 suppressMessages({
+  library(tidyverse)
+  library(ggthemes)
+  library(colorspace)
+
   library(tensorflow)
   library(tfprobability)
   library(keras)
+
   library(igraph)
   library(ggraph)
-  library(tidyverse)
-
   library(pcalg)
 })
 ```
@@ -49,7 +52,7 @@ The goal of causal structure learning is to find the causal ordering of $p$ rand
 - ...
 
 
-Score-based methods, such as DAG-GNN or GES, approach the structure learning problem by optimization of a defined score relative to a data set. A drawback of score-based methods is that they often need to assume causal sufficiency (i.e., no latent confounding), that they get stuck in local optimina, and that they need to make several parametric assumptions. 
+Score-based methods, such as DAG-GNN or GES, approach the structure learning problem by optimization of a defined score relative to a data set. A drawback of score-based methods is that they often need to assume causal sufficiency (i.e., no latent confounding), that they get stuck in local optimina, and that they need to make several parametric assumptions.
 
 To learn the causal structure we will need some definitions and assumptions first. A *Bayesian network* represents a joint probability distribution ${P}$ over random variables ${X}$ that factorizes over a DAG $\mathcal{G}$ as
 
@@ -82,13 +85,13 @@ which we can rearrange to
 \mathbf{Z} & \leftarrow \mathbf{X} \left(\mathbf{I} - \mathbf{A} \right)
 \end{align}
 
-where $\mathbf{I}$ is the identity matrix of appropriate dimensions. 
+where $\mathbf{I}$ is the identity matrix of appropriate dimensions.
 
 # Methods
 
 To learn the adjacency matrix $\mathbf{A}$ we will use two different approaches:
 
-- a score-based method, DAG-GNN, which is based on graph variational autoencoders and has been introduced by @yu2019dag, 
+- a score-based method, DAG-GNN, which is based on graph variational autoencoders and has been introduced by @yu2019dag,
 - another score-based method, the GES-algorithm which has been introduced by @chickering2002optimal and which is one of most frequently used method to learn causal DAGs in statistics.
 
 I'll introduce each briefly below and then apply both to data.
@@ -153,7 +156,7 @@ model <- function(n, p, n_hidden = p) {
     A[upper.tri(A)] <- rnorm(p * (p - 1L) / 2L, 0, 0.1)
     self$A <- tf$Variable(A, name = "A", trainable = TRUE, dtype = "float32")
     self$I <- tf$eye(p, dtype = "float32") # diag for convencience
-        
+
     self$dense_g21 <- dense("g_21", n_hidden, "relu")
     self$dense_g22 <- dense("g_22", p * 2, "linear")    
     self$dense_f11 <- dense("f_11", n_hidden, "relu")
@@ -169,7 +172,7 @@ model <- function(n, p, n_hidden = p) {
       z_mean <- tf$matmul(z_tilde[[1]], tri)
       z_var  <- tf$matmul(z_tilde[[2]], tri) %>%
         tf$exp()
-        
+
       tfp$distributions$Independent(
         tfp$distributions$Normal(
           loc = z_mean, scale = tf$sqrt(z_var)
@@ -198,7 +201,7 @@ model <- function(n, p, n_hidden = p) {
       tf$where(
         tf$math$is_nan(self$A), tf$zeros_like(self$A), self$A
       )
-        
+
       enc <- self$posterior(x)
       z <- enc$sample()
       dec <- self$likelihood(z)
@@ -243,7 +246,7 @@ The penality can be coded like this:
 h <- function(A, alpha) {
   p <- A$shape[[1]]
   I <- tf$eye(p)
-    
+
   e <- I + alpha * tf$math$multiply(A, A)
   er <- e
   for (i in seq(2, p)) {
@@ -265,10 +268,10 @@ loss <- function(data, model, alpha, lambda, c) {
           loc = tf$zeros(c(n, p)), scale = tf$ones(c(n, p))
       )
   )
-  
+
   loglik <- lik_fun$log_prob(data)
   divergence <- tfp$distributions$kl_divergence(posterior, prior)
-    
+
   elbo <- tf$reduce_mean(loglik - divergence)
   lang <- h(model$A, alpha)  
   loss <- -elbo + lambda * lang +  0.5 * c * lang^2  
@@ -279,7 +282,7 @@ loss <- function(data, model, alpha, lambda, c) {
 This pretty much is it. We now only need to define a method to train the parameters which, with Tensorflow 2, can be done like this:
 
 ```{r}
-train <- function(data, n_epochs=100, learning_rate=0.1, 
+train <- function(data, n_epochs=100, learning_rate=0.1,
                   threshold=0.05,
                   c=10, lambda=10, alpha=1)
 {
@@ -291,7 +294,7 @@ train <- function(data, n_epochs=100, learning_rate=0.1,
       with(tf$GradientTape() %as% t, {
         lo <- loss(data, vae, alpha, lambda, c)
       })
-        
+
       gradients <- t$gradient(lo, vae$trainable_variables)
       optimizer$apply_gradients(purrr::transpose(list(
         gradients, vae$trainable_variables
@@ -400,13 +403,13 @@ bn.ges.cpdag <- pcalg::getGraph(bn.ges$essgraph) %>%
     pcalg::dag2cpdag() %>%
     igraph::graph_from_graphnel() %>%
     igraph::as_adj() %>%
-    as.matrix() %>% 
+    as.matrix() %>%
     plot.adj()
 
 bn.ges.cpdag + ggplot2::ggtitle("GES CPDAG")
 ```
 
-That looks good. GES managed to correctly infer all the edges of the true DAG (including v-structures). This was expected, since the sample size is fairly high. Next we fit the autoencoder. DAG-GNN has several tuning paramameters. When testing the method, Lagrange multipliers $c$ and $\lambda$ with high values yielded the best results. Choices of $\alpha$ did not significantly change the output of the method. 
+That looks good. GES managed to correctly infer all the edges of the true DAG (including v-structures). This was expected, since the sample size is fairly high. Next we fit the autoencoder. DAG-GNN has several tuning paramameters. When testing the method, Lagrange multipliers $c$ and $\lambda$ with high values yielded the best results. Choices of $\alpha$ did not significantly change the output of the method.
 
 ```{r}
 bn.gnn <- train(X, n_epochs = 1000, c=1000000, lambda=1000000, learning_rate=0.1)
@@ -421,12 +424,12 @@ igraph::graph_from_adjacency_matrix(bn.gnn, weighted=TRUE) %>% is.dag()
 As before we compute the CPDAG from the DAG and plot that. The result of the training is a weighted adjacency matrix which we first convert to a `graphNEL`, then to the CPDAG and then back to an adjacency matrix.
 
 ```{r, fig.width=5, fig.height=3, fig.align="center"}
-bn.daggnn.cpdag <- igraph::graph_from_adjacency_matrix(bn.gnn, weighted = TRUE) %>% 
+bn.daggnn.cpdag <- igraph::graph_from_adjacency_matrix(bn.gnn, weighted = TRUE) %>%
   igraph::as_graphnel() %>%
   pcalg::dag2cpdag() %>%   
   igraph::graph_from_graphnel() %>%
   igraph::as_adj() %>%
-  as.matrix() %>% 
+  as.matrix() %>%
   plot.adj()
 
 bn.daggnn.cpdag + ggplot2::ggtitle("DAG-GNN CPDAG")
