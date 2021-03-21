@@ -1,7 +1,7 @@
 ---
-title: "Gaussian process regression"
+title: "Gaussian process classification"
 author: "Simon Dirmeier <simon.dirmeier @ web.de>"
-date: "March 2021"
+date: "October 2018"
 bibliography: ./references/references.bib
 link-citations: true
 output:
@@ -22,8 +22,7 @@ knitr::opts_chunk$set(comment = NA, warning = FALSE, error = FALSE,
                       fig.align = "center", fig.width=11, fig.height=4)
 ```
 
-Gaussian processes (GPs) offer an elegant framework for non-parametric Bayesian regression
-by endowing a prior distribution over a function space. In this notebook we derive the basics of how they can be used for regression and machine learning. Most of the material is based on @rasmussen2006, but I also recommend @betancourt2020gp as a resource. Throughout this notebook, we will use [*Stan*](https://mc-stan.org/) to fit GPs. Feedback and comments are welcome!
+[Gaussian process regression](gaussian_process_regression.html) introduced how we can use Gaussian processes for regression modelling if we assume normally distributed data. In that scenario, derivation of the posterior GP was especially easy, because it has a closed form solution. In this notebook we will extend the GP framework to binary classification. Most of the material is based on @rasmussen2006, but I also recommend @betancourt2020gp as a resource. Throughout this notebook, we will use [*Stan*](https://mc-stan.org/) to fit GPs. Feedback and comments are welcome!
 
 ```{r}
 suppressMessages({
@@ -36,8 +35,168 @@ suppressMessages({
 })
 
 set.seed(23)
+color_scheme_set("darkgray")
 ```
 
+# Latent GPs
+
+To make GPs fit into a classification framework we merely need to adopt the observation model. Hence, the GP prior itself will stay the same, i.e., the GP prior os fully specified by a mean function $m$ and a covariance function $k$:
+
+\begin{align*}
+f(\mathbf{x}) & \sim \mathcal{GP}(m(\mathbf{x}), k(\mathbf{x}, \mathbf{x}'))
+\end{align*}
+
+For classification we will use data set $\mathcal{D} = \{(\mathbf{x}_i, y_i)\}_{i=1}^n$ with $y_i \in \{0, 1\}$.
+
+To put the latent GP into the domain of $Y$ we, exactly as for GLMs, squash it through an 
+inverse link function. Most commonly we use a logit link function, for which the inverse is the logistic function:
+
+\begin{equation}
+\pi(x) = \frac{1}{1+\exp(-x)}
+\end{equation}
+
+Let's generate some data using Stan. First we define some parameters:
+
+```{r}
+n.init <- 1000
+alpha <- 5
+rho <- .1
+x.init <- seq(-1, 1, length.out=n.init)
+```
+
+Then we load a model file that generates data for us:
+
+```{r}
+obs.model <- "_models/gp_generate_binary.stan"
+cat(readLines(obs.model), sep = "\n")
+```
+The model uses a binomial observation model and aforementioned logit link:
+
+\begin{align*}
+p(\mathbf{y} \mid f, \mathbf{x}) = \prod_i^n \mathcal{Bernoulli}\left(\text{logit}^{-1} \left(f \right) \right),
+\end{align*}
+
+```{r, results='hide', message=FALSE, error=FALSE, warning=FALSE}
+yf.init <- stan(
+  obs.model,
+  data=list(n=n.init, x=x.init, alpha=alpha, rho=rho),
+  iter=1,
+  chains=1,
+  algorithm="Fixed_param"
+)
+```
+
+```{r}
+binomial.family <- binomial()
+
+f.init <- extract(yf.init)$f[1,]
+y.init <- extract(yf.init)$y[1,]
+mu.init <- binomial.family$linkinv(f.init)
+
+linear.predictor.df <- data.frame(x=x.init, mu=mu.init)
+```
+
+Having the data as well as the latent GP sampled, we put everything in a data frame and visualize the data as well as the true latent GP function. 
+
+```{r}
+set.seed(23L)
+
+n <- 200L
+idxs <- sort(sample(seq(f.init), n, replace=FALSE))
+
+x <- x.init[idxs]
+y <- y.init[idxs]
+
+D <- data.frame(x=x, y=y)
+```
+
+```{r}
+ggplot() +
+  geom_point(data=D, aes(x, y), size=1) +
+  geom_line(data=linear.predictor.df, aes(x, mu)) +
+  theme_tufte() +
+  theme(
+    axis.text = element_text(colour = "black", size = 15),
+    strip.text = element_text(colour = "black", size = 15)
+  ) +
+  xlab(NULL) +
+  ylab(NULL)
+```
+
+# Posterior GP
+
+Since the prior is not conjugate to the likelihood, the posterior does not have an analytical form and thus needs to be either approximated deterministically, e.g using a Laplace approximation, expectation propagation or variationally, or stochastically using sampling. 
+
+Conveniently, using Stan, we can do full Bayesian inference as well as the kernel hyperparameters. The Stan code to do all of this for us is shown below:
+
+```{r}
+posterior.model <- "_models/gp_posterior_binomial.stan"
+cat(readLines(posterior.model), sep = "\n")
+```
+Let's run it and see if our inferences are accurate.
+
+```{r, results='hide', message=FALSE, error=FALSE, warning=FALSE}
+posterior <- stan(
+  posterior.model,
+  data=list(n=n, x=x, y=y, n_star=n.init, x_star=x.init),
+  iter=2000,
+  chains=4
+)
+```
+
+```{r}
+print(posterior, pars=c("alpha", "rho", "lp__"))
+```
+
+The inferences look good: high-effective sample sizes as well as $\hat{R}$s of one. Let's plot the traces as well as the histograms of the posteriors of the kernel hyperparameters.
+
+```{r, message=FALSE, error=FALSE, warning=FALSE}
+bayesplot::mcmc_trace(posterior, pars=c("rho", "alpha")) +
+  theme_tufte() +
+  theme(
+    axis.text = element_text(colour = "black", size = 15),
+    strip.text = element_text(colour = "black", size = 15)
+  ) +
+  scale_color_discrete_sequential(l1 = 1, l2 = 60) +
+  xlab(NULL) +
+  ylab(NULL) +
+  guides(color=FALSE)
+```
+
+```{r, message=FALSE, error=FALSE, warning=FALSE}
+bayesplot::mcmc_hist_by_chain(posterior, pars=c("rho", "alpha")) +
+  theme_tufte() +
+  theme(
+    axis.text = element_text(colour = "black", size = 15),
+    strip.text = element_text(colour = "black", size = 15)
+  ) +
+  xlab(NULL) +
+  ylab(NULL)
+```
+
+# Predictive posterior
+
+In the end let's also make some predictions. Computing the predictive posterior of a GP classification model can be a bit awkward in Stan. The manual suggests to
+model the predictive posterior distribution as 
+
+$$
+p(\mathbf{y}^* \mid \mathbf{y}, \mathbf{x}^* , \mathbf{x}) = \frac{ p(\mathbf{y}^* , \mathbf{y} \mid \mathbf{x}^*,  \mathbf{x})}{p(\mathbf{y} \mid \mathbf{x})} \propto p(\mathbf{y}^* , \mathbf{y} \mid \mathbf{x}^*,  \mathbf{x})
+$$
+i.e., jointly with the observed data. That is a bit inconvenient in some cases, because sometimes we only want to compute the posterior once, and then use it for multiple predictions. Hence, here,
+we first compute trhe posterior over the hyperparameters and the latent GP and then use this for prediction as:
+
+$$
+p(\mathbf{y}^* \mid \mathbf{y}, \mathbf{x}^* , \mathbf{x}) = \int p(\mathbf{y}^* \mid f^*) p(f^* \mid f, \mathbf{x}^*, \mathbf{x}) p(f \mid \mathbf{y}, \mathbf{x}) 
+$$
+So we first compute $p(f \mid \mathbf{y}, \mathbf{x})$ (which we did above) and now compute $p(f^* \mid f)$.
+
+```{r}
+posterior.model <- "_models/gp_predictive_posterior_binomial.stan"
+cat(readLines(posterior.model), sep = "\n")
+```
+```{r}
+for ()
+```
 
 # License
 
