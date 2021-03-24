@@ -36,6 +36,7 @@ suppressMessages({
 
 set.seed(23)
 color_scheme_set("darkgray")
+options(mc.cores = 4L)
 ```
 
 # Latent GPs
@@ -55,26 +56,29 @@ inverse link function. Most commonly we use a logit link function, for which the
 \pi(x) = \frac{1}{1+\exp(-x)}
 \end{equation}
 
-Let's generate some data using Stan. First we define some parameters:
+# Data
+
+Let's generate some data and try to fit it using Stan. First we define some parameters:
 
 ```{r}
 n.init <- 1000
-alpha <- 5
-rho <- .1
+alpha  <- 5
+rho    <- .1
 x.init <- seq(-1, 1, length.out=n.init)
 ```
 
-Then we load a model file that generates data for us:
+We'll use a binomial observation model and aforementioned logit link:
+
+\begin{align*}
+p(\mathbf{y} \mid f, \mathbf{x}) = \prod_i^n \mathcal{Bernoulli}\left(\text{logit}^{-1} \left(f \right) \right),
+\end{align*}
+
+Then we load a model file that generates data for us.
 
 ```{r}
 obs.model <- "_models/gp_generate_binary.stan"
 cat(readLines(obs.model), sep = "\n")
 ```
-The model uses a binomial observation model and aforementioned logit link:
-
-\begin{align*}
-p(\mathbf{y} \mid f, \mathbf{x}) = \prod_i^n \mathcal{Bernoulli}\left(\text{logit}^{-1} \left(f \right) \right),
-\end{align*}
 
 ```{r, results='hide', message=FALSE, error=FALSE, warning=FALSE}
 yf.init <- stan(
@@ -85,6 +89,9 @@ yf.init <- stan(
   algorithm="Fixed_param"
 )
 ```
+
+We get the data from Stan, by extracting them by their name. In addition to the latent function and the observations, we also compute the latent means, i.e., a sample from the GP squashed through our inverse link
+function. Conveniently `R` already provides a couple of famlies and their respective link functions:
 
 ```{r}
 binomial.family <- binomial()
@@ -101,7 +108,7 @@ Having the data as well as the latent GP sampled, we put everything in a data fr
 ```{r}
 set.seed(23L)
 
-n <- 200L
+n <- 100L
 idxs <- sort(sample(seq(f.init), n, replace=FALSE))
 
 x <- x.init[idxs]
@@ -127,7 +134,7 @@ ggplot() +
 
 Since the prior is not conjugate to the likelihood, the posterior does not have an analytical form and thus needs to be either approximated deterministically, e.g using a Laplace approximation, expectation propagation or variationally, or stochastically using sampling. 
 
-Conveniently, using Stan, we can do full Bayesian inference as well as the kernel hyperparameters. The Stan code to do all of this for us is shown below:
+Conveniently, using Stan, we can do full Bayesian inference of the GP as well as the kernel hyperparameters. The Stan code to do all of this for us is shown below:
 
 ```{r}
 posterior.model <- "_models/gp_posterior_binomial.stan"
@@ -140,7 +147,8 @@ posterior <- stan(
   posterior.model,
   data=list(n=n, x=x, y=y, n_star=n.init, x_star=x.init),
   iter=2000,
-  chains=4
+  chains=4, 
+  seed = 23
 )
 ```
 
@@ -174,6 +182,41 @@ bayesplot::mcmc_hist_by_chain(posterior, pars=c("rho", "alpha")) +
   ylab(NULL)
 ```
 
+Let's also have a look at the mean of the posterior of the latent GP.
+
+```{r}
+samples <- extract(posterior, "f")$f
+
+mu.posterior <-  binomial.family$linkinv(samples)
+mu.posterior.mean <- apply(mu.posterior, 2, mean)
+mu.posterior.quantiles <- apply(mu.posterior, 2, quantile, prob=c(0.05, 0.95))
+
+mu.posterior <- data.frame(
+    x=x,
+    mu=mu.posterior.mean,
+    mu.quantiles = t(mu.posterior.quantiles)
+  ) %>%
+  set_names(c("x", "mu", "lower", "upper"))
+
+ggplot() +
+  geom_ribbon(data=mu.posterior, aes(x, ymin=lower, ymax=upper), fill="#A1A6C8") +
+  geom_point(data=D, aes(x, y), size=1) +
+  geom_line(data=mu.posterior, aes(x, mu, color="darkblue")) +
+  geom_line(data=linear.predictor.df, aes(x, mu, colour="black")) +
+  scale_colour_manual(
+    values=c("black", "darkblue"), 
+    breaks=c("black", "darkblue"), 
+    labels=c("True latent GP", "Posterior mean")) +
+  theme_tufte() +
+  theme(
+    axis.text = element_text(colour = "black", size = 15),
+    legend.text = element_text(colour = "black", size = 15),
+    legend.title = element_blank()
+  ) +
+  xlab(NULL) +
+  ylab(NULL)
+```
+
 # Predictive posterior
 
 In the end let's also make some predictions. Computing the predictive posterior of a GP classification model can be a bit awkward in Stan. The manual suggests to
@@ -183,19 +226,81 @@ $$
 p(\mathbf{y}^* \mid \mathbf{y}, \mathbf{x}^* , \mathbf{x}) = \frac{ p(\mathbf{y}^* , \mathbf{y} \mid \mathbf{x}^*,  \mathbf{x})}{p(\mathbf{y} \mid \mathbf{x})} \propto p(\mathbf{y}^* , \mathbf{y} \mid \mathbf{x}^*,  \mathbf{x})
 $$
 i.e., jointly with the observed data. That is a bit inconvenient in some cases, because sometimes we only want to compute the posterior once, and then use it for multiple predictions. Hence, here,
-we first compute trhe posterior over the hyperparameters and the latent GP and then use this for prediction as:
+we first compute the posterior over the hyperparameters and the latent GP and then use this for prediction as:
 
 $$
 p(\mathbf{y}^* \mid \mathbf{y}, \mathbf{x}^* , \mathbf{x}) = \int p(\mathbf{y}^* \mid f^*) p(f^* \mid f, \mathbf{x}^*, \mathbf{x}) p(f \mid \mathbf{y}, \mathbf{x}) 
 $$
-So we first compute $p(f \mid \mathbf{y}, \mathbf{x})$ (which we did above) and now compute $p(f^* \mid f)$.
+So we first compute $p(f \mid \mathbf{y}, \mathbf{x})$ (which we did above) and now compute $p(f^* \mid f, \mathbf{x}^*, \mathbf{x})$. The model code is below. 
 
 ```{r}
-posterior.model <- "_models/gp_predictive_posterior_binomial.stan"
-cat(readLines(posterior.model), sep = "\n")
+predictive.posterior.model <- 
+  "_models/gp_predictive_posterior_binomial.stan"
+cat(readLines(predictive.posterior.model), sep = "\n")
 ```
+
+For the computation of $p(f^* \mid f, \mathbf{x}^*, \mathbf{x})$ we need to compute the covariances $K(\mathbf{x}^* , \mathbf{x})$ and $K(\mathbf{x}^* , \mathbf{x}^* )$ for which we need kernel hyperparameters. We can either do that by iterating over every posterior sample $f, \alpha, \rho \sim p(f, \alpha, \rho \mid D)$ and then sample from the posterior predictive $p(f^* \mid f, \mathbf{x}^*, \mathbf{x})$, or we just compute the posterior means and plug them in, which is what we do here. From the posterior means, we compute the mean $\mathbb{E}[f^* \mid f, \mathbf{x}^*, \mathbf{x}]$ and variance ${Var}[f^* \mid f, \mathbf{x}^*, \mathbf{x})]$ and then sample from $p(f^* \mid f, \mathbf{x}^*, \mathbf{x})$.
+
 ```{r}
-for ()
+samples <- extract(posterior)
+
+alpha.posterior.mean <- mean(samples$alpha)
+rho.posterior.mean   <- mean(samples$rho)
+f.posterior.mean     <- apply(samples$f, 2, mean)
+```
+
+The model doesn't contain any parameters anymore, hence we use one chain and "Fixed_param".
+
+```{r, results="hide", message=FALSE, error=FALSE, warning=FALSE}
+predictive.posterior <- stan(
+  predictive.posterior.model,
+  data=list(
+    n=n, x=x, y=y, n_star=n.init, x_star=x.init,
+    f=f.posterior.mean, alpha=alpha.posterior.mean, rho=rho.posterior.mean),
+  iter=1000,
+  warmup=0,
+  chains=1,
+  algorithm="Fixed_param"
+)
+```
+
+We then compute the mean of the predictive posterior, plot it (red) and compare it to the true latent function (black).
+
+```{r}
+samples <- extract(predictive.posterior)$f_star
+
+mu.p.posterior <-  binomial.family$linkinv(samples)
+mu.p.posterior.mean <-  binomial.family$linkinv(
+  apply(samples, 2, mean)
+)
+mu.p.posterior.quantiles <- binomial.family$linkinv(
+  apply(samples, 2, quantile, prob=c(0.025, 0.975))
+)
+
+mu.p.posterior <- data.frame(
+  x=x.init,
+  mu=mu.p.posterior.mean,
+  mu.quantiles = t(mu.p.posterior.quantiles)
+) %>%
+  set_names(c("x", "mu", "lower", "upper"))
+
+ggplot() +
+  geom_point(data=D, aes(x, y), size=1) +
+  geom_line(data=mu.p.posterior, aes(x, mu, color="darkred")) +
+  geom_line(data=mu.posterior, aes(x, mu, color="darkblue")) +
+  geom_line(data=linear.predictor.df, aes(x, mu, colour="black")) +
+  scale_colour_manual(
+    values=c("black", "darkblue" , "darkred"), 
+    breaks=c("black", "darkblue", "darkred"), 
+    labels=c("True latent GP", "Posterior mean", "Posterior predictive\nmean")) +
+  theme_tufte() +
+  theme(
+    axis.text = element_text(colour = "black", size = 15),
+    legend.text = element_text(colour = "black", size = 15),
+    legend.title = element_blank()
+  ) +
+  xlab(NULL) +
+  ylab(NULL)
 ```
 
 # License

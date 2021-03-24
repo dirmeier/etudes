@@ -1,22 +1,24 @@
 functions {
- vector reparam(vector f_tilde, real[] x, real alpha, real rho)  {
-    int n = num_elements(x);
-    vector[n] f;
-    matrix[n, n] L_K;
-    matrix[n, n] K = cov_exp_quad(x, alpha, rho)
-        + diag_matrix(rep_vector(1e-10, n));
-    L_K = cholesky_decompose(K);
-    f = L_K * f_tilde;
-    return f;
- }
-
-  vector pred_f_star(vector f_tilde, real[] x, real[] x_star, real alpha, real rho) {
+  vector f_star_rng(vector f, real[] x, real[] x_star, real alpha, real rho) {
     int n = size(x);
     int n_star = size(x_star);
-    matrix[n, n] K = cov_exp_quad(x, alpha, rho);
-    matrix[n, n_star] K_star = cov_exp_quad(x, x_star, alpha, rho);
-    vector[n] f_post = reparam(f_tilde, x, alpha, rho);
-    vector[n_star] f_star = K_star' * inverse(K) * f_post;
+    matrix[n, n] K = cov_exp_quad(x, alpha, rho)
+        + diag_matrix(rep_vector(1e-10, n));
+    matrix[n, n] L_K = cholesky_decompose(K);
+
+    matrix[n_star, n] K_star = cov_exp_quad(x_star, x, alpha, rho);
+    matrix[n_star, n_star] K_star_star = cov_exp_quad(x_star, alpha, rho);
+    matrix[n, n_star] A_star = mdivide_left_tri_low(L_K, K_star');
+
+    vector[n_star] f_star_mean = K_star * inverse(K) * f;
+    matrix[n_star, n_star] f_star_cov =  K_star_star
+        - A_star' * A_star
+        + diag_matrix(rep_vector(1e-10, n_star));
+
+    vector[n_star] f_star = multi_normal_cholesky_rng(
+        f_star_mean,
+        f_star_cov
+    );
     return f_star;
   }
 }
@@ -26,14 +28,14 @@ data {
   real x[n];
 
   int<lower=1> n_star;
-  real x_star[n];
+  real x_star[n_star];
 
-  vector[n] f_tilde;
+  vector[n] f;
   real<lower=0> alpha;
   real<lower=0> rho;
 }
 
 generated quantities {
   vector[n_star] f_star;
-  f_star = pred_f_star(f_tilde, x, x_star, alpha, rho);
+  f_star = f_star_rng(f, x, x_star, alpha, rho);
 }

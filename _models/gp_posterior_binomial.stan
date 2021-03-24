@@ -27,11 +27,14 @@ parameters {
   real<lower=0> rho;
 }
 
-model {
+transformed parameters {
   vector[n] f = reparam(f_tilde, x, alpha, rho);
+}
+
+model {
   f_tilde ~ std_normal();
   rho ~ inv_gamma(25, 5);
-  alpha ~ normal(0, 2);
+  alpha ~ normal(0, 3);
 
   y ~ bernoulli_logit(f);
 }
