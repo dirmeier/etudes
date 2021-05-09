@@ -38,7 +38,6 @@ make.moons <- function(n, sigma) {
   
   X
 }
-
 ```
 
 In this notebook we will implement a normalizing flow, the [masked autoregressive flow](http://papers.nips.cc/paper/6828-masked-autoregressive-flow-for-density-estimation), for density estimation using Tensorflow Probability. A useful review on recent trends on normalizing flows can be found [here](https://arxiv.org/abs/1912.02762). Feedback and comments are welcome!
@@ -253,7 +252,8 @@ maf <- function(shift_and_log_scale_fn) {
       sas <- tf$unstack(sas, 2, -1)
       -tf$reduce_sum(sas[[2]], axis=1L)
     },
-    forward_min_event_ndims = 1L
+    forward_min_event_ndims = 1L,
+    inverse_min_event_ndims = 1L
   )
 }
 ```
@@ -275,7 +275,7 @@ X <- tf$constant(X, dtype=tf$float32)
 ```
 
 ```{r}
-ggplot(as.data.frame(X)) + 
+ggplot(as.data.frame(X$numpy())) + 
   geom_point(aes(V1 ,V2), pch=".") +
   theme_tufte() + 
   theme(
