@@ -1,0 +1,440 @@
+---
+title: "Hierarchical, coregionalized GPs"
+author: "Simon Dirmeier <simon.dirmeier @ web.de>"
+date: "May 2021"
+bibliography: ./references/references.bib
+link-citations: true
+output:
+  html_document:
+    theme: lumen
+    css: ./css/custom.css
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    number_sections: no
+    highlight: pygments
+---
+
+```{r knitr_init, include=FALSE, echo=FALSE, cache=FALSE, message=FALSE}
+knitr::opts_chunk$set(comment = NA, warning = FALSE, error = FALSE,
+                      fig.align = "center",
+                      fig.width=10, fig.height=5)
+
+library(reticulate)
+use_condaenv("pax-dev")
+```
+
+In this case study we compare a multi-level Gaussian process model to a hierarchical coregionalized Gaussian process model in terms of their predictive performance and their MCMC sampling diagnostics.
+The case study is inspired by Rob Trangucci's talk at StanCon 2017 @trangucci2017, where he demonstrated a multi-level GP model to predict US presidential votes. We first re-implement Rob's model (or at least a similar one) and modify it a bit to use coregionalization.
+
+Usually I implement my notebooks in Stan, but since I wanted to test [Numpyro](http://num.pyro.ai/en/latest/index.html) for a long time, we will be using it here for a change. Feedback and comments are welcome!
+
+We load some libraries first.
+
+```{python}
+import numpy as onp
+import pandas as pd
+
+import jax
+from jax import vmap
+import jax.numpy as np
+import jax.random as random
+
+import numpyro
+import numpyro.distributions as nd
+from numpyro.infer import MCMC, NUTS
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import arviz as az
+
+import palettes
+palettes.set_theme()
+```
+
+# Presidential elections 
+
+The data set consists of counts of votes for US parties between 1974 and 2016. The counts are available for every state in the US. We can either model these counts directly, or we model the proportion of votes one party received in a state.
+
+```{python}
+D = pd.read_csv("./data/elections.csv")
+D.loc[:, "proportion"] = D.dem / (D.dem + D.rep)
+D
+```
+
+The different states allow a grouping per region which we directly adopt from Rob's talk.
+
+```{python}
+g = sns.FacetGrid(
+    D, 
+    col="region",
+    hue="state",
+    palette=palettes.discrete_sequential_colors(),     
+    col_wrap=4,
+    sharex=False, 
+    sharey=False
+)
+g.map_dataframe(
+    sns.lineplot, x="year", y="proportion", style="state", markers="o"
+)
+g.set_axis_labels("Total bill", "Tip")
+sns.despine(left=True)
+plt.show()
+```
+
+# Preprocessing
+
+```{python}
+def rbf(X1, X2, sigma=1.0, rho=1.0, jitter=1.0e-6):
+    X1_e = np.expand_dims(X1, 1) / rho
+    X2_e = np.expand_dims(X2, 0) / rho
+    d = np.sum((X1_e - X2_e) ** 2, axis=2)    
+    K = sigma * np.exp(-0.5 * d) + np.eye(d.shape[0]) * jitter
+    return K
+```
+
+```{python}
+def sample(model):
+    rng_key, rng_key_predict = random.split(random.PRNGKey(23))
+
+    kernel = NUTS(model)
+    mcmc = MCMC(
+        kernel,
+        num_warmup=1000,
+        num_samples=1000,
+        num_chains=4,
+        progress_bar=False,
+    )
+    mcmc.run(
+        rng_key,
+        y,
+        Xu,
+        n_times,
+        time_idxs,
+        n_states,
+        state_idxs,
+        n_regions,
+        region_idxs,
+        train_idxs,
+        n_states_per_region,
+    )
+    return mcmc
+```
+
+```{python}
+def predict(mcmc, n=5):
+    samples = mcmc.get_samples()
+    rng_key, rng_key_predict = random.split(random.PRNGKey(0))
+    vmap_args = (
+        random.split(rng_key_predict, samples["nu"].shape[0]),
+        samples["nu"],
+        samples["eta"],
+    )
+    preds_map = jax.vmap(
+        lambda key, nu, eta: np.mean(
+            nd.Beta(eta, nu - eta).sample(key, sample_shape=(n,)), axis=0
+        )
+    )
+    preds = preds_map(*vmap_args)
+    means = np.mean(preds, axis=0)
+    quantiles = np.percentile(preds, [5.0, 95.0], axis=0)
+    return means, quantiles
+```
+
+```{python}
+years = pd.to_datetime(D.year)
+years = (years - years.min()) / pd.Timedelta(1)
+
+D.loc[:, ("year_numerical")] = years
+D = D.sort_values(["region", "state", "year_numerical"])
+```
+
+```{python}
+D.loc[:, ("region_idxs")] = D["region"].apply(
+    lambda x: list(D.region.unique()).index(x)
+)
+D.loc[:, ("state_idxs")] = D["state"].apply(
+    lambda x: list(D.state.unique()).index(x)
+)
+D.loc[:, ("time_idxs")] = D["year_numerical"].apply(
+    lambda x: list(D.year_numerical.unique()).index(x)
+)
+
+D
+```
+
+```{python}
+X = np.array(D["year_numerical"].values).reshape(-1, 1)
+Xu = np.unique(X).reshape(-1, 1)
+y = np.array(D["proportion"].values)
+```
+
+```{python}
+time_idxs = np.array(D["time_idxs"].values)
+n_times = len(np.unique(time_idxs))
+state_idxs = np.array(D["state_idxs"].values)
+n_states = len(np.unique(state_idxs))
+region_idxs = np.array(D["region_idxs"].values)
+n_regions = len(np.unique(region_idxs))
+
+n_states_per_region = np.array(
+    D.groupby(["region", "state"]).size().groupby("region").size()
+)
+```
+
+```{python}
+train_idxs = np.tile(np.arange(11) != 7, n_states)
+```
+
+# A multi-level GP
+
+```{python}
+def multilevel_model(
+    y,
+    Xu,
+    n_times,
+    time_idxs,
+    n_states,
+    state_idxs,
+    n_regions,
+    region_idxs,
+    train_idxs,
+    n_states_per_region,
+):
+    n = 3
+    sigma_tot = numpyro.sample("sigma_tot", nd.Gamma(3.0, 3.0))
+    sigma_prop = numpyro.sample("sigma_prop", nd.Dirichlet(np.repeat(2.0, n)))
+    sigmas = n * sigma_prop * sigma_tot
+
+    rho_region_gp = numpyro.sample("rho_region_gp", nd.LogNormal(0.0, 1.0))
+    K_region_gp = rbf(Xu, Xu, sigmas[0], rho_region_gp)
+    L_region_gp = np.linalg.cholesky(K_region_gp)
+    with numpyro.plate("regions", size=n_regions):
+        f_reg_tilde = numpyro.sample(
+            "f_reg_tilde", nd.Normal(loc=np.zeros((Xu.shape[0], 1)))
+        )
+        f_reg = numpyro.deterministic("f_reg", L_region_gp @ f_reg_tilde)
+    f_reg = np.repeat(f_reg, n_states_per_region, axis=1)
+    f_reg = f_reg.T.reshape(-1)
+
+    rho_state_gp = numpyro.sample("rho_state_gp", nd.LogNormal(0.0, 1.0))
+    K_state_gp = rbf(Xu, Xu, sigmas[1], rho_state_gp)
+    L_state_gp = np.linalg.cholesky(K_state_gp)
+    with numpyro.plate("states", size=n_states):
+        f_stat_tilde = numpyro.sample(
+            "f_stat_tilde", nd.Normal(loc=np.zeros((Xu.shape[0], 1)))
+        )
+        f_stat = numpyro.deterministic("f_stat", L_state_gp @ f_stat_tilde)
+    f_stat = f_stat.reshape(-1)
+
+    with numpyro.plate("states", size=n_states):
+        rho = numpyro.sample("rho", nd.LogNormal(0.0, 1.0))
+        K = rbf(Xu, Xu, sigmas[2], rho)
+        L = np.linalg.cholesky(K)
+        f_tilde = numpyro.sample(
+            "f_tilde", nd.Normal(loc=np.zeros((Xu.shape[0], 1)))
+        )
+        f = numpyro.deterministic("f", L @ f_tilde)
+    f = f.reshape(-1)
+
+    nu = numpyro.sample("nu", nd.Gamma(5.0, 0.01))
+    mu = numpyro.sample("mu", nd.Normal(0.0, 0.5))
+    eta = numpyro.deterministic(
+        "eta", nu * jax.scipy.special.expit(mu + f_reg + f_stat + f)
+    )
+    numpyro.sample(
+        "y", nd.Beta(eta[train_idxs], nu - eta[train_idxs]), obs=y[train_idxs]
+    )
+```
+
+
+```{python}
+mcmc_multilevel = sample(multilevel_model)
+rhat_multilevel = az.rhat(mcmc_multilevel)
+ess_multilevel = az.ess(mcmc_multilevel)
+```
+
+```{python}
+rhat_multilevel.data_vars
+```
+
+```{ess_multilevel}
+rhat_multilevel.data_vars
+```
+
+```{python}
+means_multilevel, quantiles_multilevel = predict(mcmc_multilevel)
+```
+
+```{python}
+Dm = D.copy()
+Dm.loc[:, "y_hat"] = onp.array(means_multilevel)
+Dm.loc[:, "y_hat_lower"] = onp.array(quantiles_multilevel[0])
+Dm.loc[:, "y_hat_upper"] = onp.array(quantiles_multilevel[1])
+```
+
+```{python}
+g = sns.FacetGrid(
+    Dm, 
+    col="region",
+    hue="state",
+    col_wrap=4,
+    palette=palettes.discrete_diverging_colors(),
+    sharex=False, 
+    sharey=False
+)
+g.map_dataframe(
+    sns.lineplot,
+    x="year",
+    y="y_hat", 
+    style="state",
+    marker="o",
+    alpha=0.5
+)
+g.map_dataframe(
+    sns.lineplot,
+    x="year",
+    y="proportion", 
+    style="state",
+)
+g.set_axis_labels("Total bill", "Tip")
+sns.despine(left=True)
+plt.show()
+```
+
+```{python}
+Dm[Dm.state == "WA"]
+```
+
+
+```{python}
+np.mean(np.abs(Dm.proportion[~train_idxs].values - Dm.y_hat[~train_idxs].values))
+```
+
+# A coregionalized GP
+
+```{python}
+def coregional_model(
+    y,
+    Xu,
+    n_times,
+    time_idxs,
+    n_states,
+    state_idxs,
+    n_regions,
+    region_idxs,
+    train_idxs,
+    n_states_per_region,
+):
+    rho_region_gp = numpyro.sample("rho_region_gp", nd.LogNormal(0.0, 1.0))
+    sigma_region_gp = numpyro.sample("sigma_region_gp", nd.LogNormal(0.0, 1.0))
+    K_region_gp = rbf(Xu, Xu, sigma_region_gp, rho_region_gp)
+    L_region_gp = np.linalg.cholesky(K_region_gp)
+    with numpyro.plate("regions", size=n_regions):
+        f_reg_tilde = numpyro.sample(
+            "f_reg_tilde", nd.Normal(loc=np.zeros((Xu.shape[0], 1)))
+        )
+        f_reg = numpyro.deterministic("f_reg", L_region_gp @ f_reg_tilde)
+    f_reg = np.repeat(f_reg, n_states_per_region, axis=1)
+    f_reg = f_reg.T.reshape(-1)
+
+    fs = []
+    for i, q in enumerate(n_states_per_region):
+        rho = numpyro.sample(f"rho_{i}", nd.LogNormal(0.0, 1.0))
+        K = rbf(Xu, Xu, 1.0, rho)
+        L = np.linalg.cholesky(K)
+        sigma = numpyro.sample(f"sigma_{i}", nd.LogNormal(np.zeros(q), 1.0))
+        omega = numpyro.sample(f"omega_{str(i)}", nd.LKJCholesky(q, 2.0))
+        f_tilde = numpyro.sample(
+            f"f_tilde_{i}", nd.Normal(loc=np.zeros((Xu.shape[0], q)))
+        )
+        f = numpyro.deterministic(
+            f"f_{i}", L @ f_tilde @ (np.diag(np.sqrt(sigma)) @ omega).T
+        )
+        fs.append(f.reshape(-1))
+    f = np.concatenate(fs)
+
+    nu = numpyro.sample("nu", nd.Gamma(5.0, 0.01))
+    mu = numpyro.sample("mu", nd.Normal(0.0, 0.5))
+    eta = numpyro.deterministic(
+        "eta", nu * jax.scipy.special.expit(mu + f_reg + f)
+    )
+    numpyro.sample(
+        "y", nd.Beta(eta[train_idxs], nu - eta[train_idxs]), obs=y[train_idxs]
+    )
+```
+
+```{python}
+mcmc_coregional = sample(coregional_model)
+rhat_coregional = az.rhat(mcmc_coregional)
+ess_coregional = az.ess(mcmc_coregional)
+```
+
+```{python}
+rhat_coregional.data_vars
+```
+
+```{ess_multilevel}
+ess_coregional.data_vars
+```
+
+```{python}
+means_coregional, quantiles_coregional = predict(mcmc_coregional)
+```
+
+
+```{python}
+Dc = D.copy()
+Dc.loc[:, "y_hat"] = onp.array(means_coregional)
+Dc.loc[:, "y_hat_lower"] = onp.array(quantiles_coregional[0])
+Dc.loc[:, "y_hat_upper"] = onp.array(quantiles_coregional[1])
+```
+
+```{python}
+g = sns.FacetGrid(
+    Dc, 
+    col="region",
+    hue="state",
+    col_wrap=4,
+    palette=palettes.discrete_diverging_colors(),
+    sharex=False, 
+    sharey=False
+)
+g.map_dataframe(
+    sns.lineplot,
+    x="year",
+    y="y_hat", 
+    style="state",
+    marker="o",
+    alpha=0.5
+)
+g.map_dataframe(
+    sns.lineplot,
+    x="year",
+    y="proportion", 
+    style="state",
+)
+g.set_axis_labels("Total bill", "Tip")
+sns.despine(left=True)
+plt.show()
+```
+
+```{python}
+Dc[Dc.state == "WA"]
+```
+
+```{python}
+np.mean(np.abs(Dc.proportion[~train_idxs].values - Dc.y_hat[~train_idxs].values))
+```
+
+
+
+# License
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png" /></a>
+
+The notebook is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
+
+# References
