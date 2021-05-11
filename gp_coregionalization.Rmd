@@ -27,11 +27,9 @@ use_condaenv("pax-dev")
 ```
 
 In this case study we compare a multi-level Gaussian process model to a hierarchical coregionalized Gaussian process model in terms of their predictive performance and their MCMC sampling diagnostics.
-The case study is inspired by Rob Trangucci's talk at StanCon 2017 @trangucci2017, where he demonstrated a multi-level GP model to predict US presidential votes. We first re-implement Rob's model (or at least a similar one) and modify it a bit to use coregionalization.
+The case study is inspired by Rob Trangucci's talk at StanCon 2017 @trangucci2017, where he demonstrated a multi-level GP model to predict US presidential votes.
 
 Usually I implement my notebooks in Stan, but since I wanted to test [Numpyro](http://num.pyro.ai/en/latest/index.html) for a long time, we will be using it here for a change. Feedback and comments are welcome!
-
-We load some libraries first.
 
 ```{python}
 import numpy as onp
@@ -56,7 +54,7 @@ palettes.set_theme()
 
 # Presidential elections 
 
-The data set consists of counts of votes for US parties between 1974 and 2016. The counts are available for every state in the US. We can either model these counts directly, or we model the proportion of votes one party received in a state.
+The data set consists of counts of votes for US parties between 1976 and 2016 adopted from the [data of Rob's talk](https://github.com/stan-dev/stancon_talks/tree/master/2017/Contributed-Talks/08_trangucci/data_pres_forecast). The counts are available for every state in the US. We can either model these counts directly, or, following @trangucci2017, we model the proportion of votes one party received in a state.
 
 ```{python}
 D = pd.read_csv("./data/elections.csv")
@@ -64,7 +62,7 @@ D.loc[:, "proportion"] = D.dem / (D.dem + D.rep)
 D
 ```
 
-The different states allow a grouping per region which we directly adopt from Rob's talk.
+The geographical location of the states suggest a grouping per region. Below we plot the proportion of votes for the democratic party for every state and region for the period between 1976 and 2016.
 
 ```{python}
 g = sns.FacetGrid(
@@ -84,7 +82,11 @@ sns.despine(left=True)
 plt.show()
 ```
 
+The data suggests a model that considers a general national trend per election year and region, and a baseline offset for democratic votes. Within regions there is also a clear correlation between states that suggests either coregionalisation or a hierarchical prior.
+
 # Preprocessing
+
+Before we model the data, we implement some utility functions. We use a exponentiated quadratic covariance function throughtout the case study, which in Jax can be implemented like this.
 
 ```{python}
 def rbf(X1, X2, sigma=1.0, rho=1.0, jitter=1.0e-6):
@@ -95,7 +97,24 @@ def rbf(X1, X2, sigma=1.0, rho=1.0, jitter=1.0e-6):
     return K
 ```
 
+To measure the sampling time our models take, we also implement a decorator.
+
 ```{python}
+def timer(func):
+    from timeit import default_timer    
+    def f(*args, **kwargs):
+        start = default_timer()
+        res = func(*args, **kwargs)
+        stop = default_timer()
+        print(f"Elapsed time: {stop - start}")
+        return res
+    return f
+```
+
+For inference, we use Numpyro's NUTS and add our previously defined decorator:
+
+```{python}
+@timer
 def sample(model):
     rng_key, rng_key_predict = random.split(random.PRNGKey(23))
 
@@ -123,6 +142,8 @@ def sample(model):
     return mcmc
 ```
 
+Finally, we make a prediction, by sampling from the joint posterior.
+
 ```{python}
 def predict(mcmc, n=5):
     samples = mcmc.get_samples()
@@ -143,15 +164,14 @@ def predict(mcmc, n=5):
     return means, quantiles
 ```
 
+We implement both models by regressing the proportions on the electoral year. For that we convert the years to numerical values first and then sort the data frame by region, state and year.
+
+
 ```{python}
 years = pd.to_datetime(D.year)
 years = (years - years.min()) / pd.Timedelta(1)
 
 D.loc[:, ("year_numerical")] = years
-D = D.sort_values(["region", "state", "year_numerical"])
-```
-
-```{python}
 D.loc[:, ("region_idxs")] = D["region"].apply(
     lambda x: list(D.region.unique()).index(x)
 )
@@ -161,7 +181,7 @@ D.loc[:, ("state_idxs")] = D["state"].apply(
 D.loc[:, ("time_idxs")] = D["year_numerical"].apply(
     lambda x: list(D.year_numerical.unique()).index(x)
 )
-
+D = D.sort_values(["region", "state", "year_numerical"])
 D
 ```
 
@@ -170,6 +190,8 @@ X = np.array(D["year_numerical"].values).reshape(-1, 1)
 Xu = np.unique(X).reshape(-1, 1)
 y = np.array(D["proportion"].values)
 ```
+In addition, we need to compute the indexes of the time points, states and regions, such that we can correctly assign everything.
+
 
 ```{python}
 time_idxs = np.array(D["time_idxs"].values)
@@ -184,11 +206,57 @@ n_states_per_region = np.array(
 )
 ```
 
+Since we also want to compare predictive performance, we treat one of 11 data points as test point and the other 10 as train indexes. That means for a data set of 550 observations (50 * 11 states), we use 50 test points.
+
+
 ```{python}
 train_idxs = np.tile(np.arange(11) != 7, n_states)
 ```
 
+# Likelihood
+
+To model the data, we will need to choose a suitable likelihood for the domain of the proportions. A fitting one having the same support as our data $Y$ is the Beta distribution:
+
+$$
+P(y \mid \alpha, \beta) = \frac{1}{B(\alpha, \beta)} y^{\alpha - 1} (1 - y)^{\beta - 1}
+$$
+For regression modelling, this one is a bit awkward to use, so we use its alternative parameterization following the [Stan manual](https://mc-stan.org/docs/2_26/functions-reference/beta-proportion-distribution.html):
+
+$$
+P(y \mid \mu, \kappa) = \frac{1}{B\left(\mu\kappa, (1 - \mu)\kappa\right)} y^{\mu\kappa -1} (1 - y)^{(1 - \mu)\kappa -1}
+$$
+Unfortunately, Numpyro does not have this parameterization, but this is not a problem as we can easily reparameterize.
+
+# Prediction
+
+For Gaussian likelihoods and given a posterior sample of the parameters of the covariance function, prediction boils down to Gaussian conditioning. For non-Gaussian likelihoods, we would first
+infer the posterior of the latent GP $P(f \mid y, X)$ and given this compute the posterior predictive 
+
+$$
+P(y* \mid y, X, X*) = \int \int  P(y* \mid f*) P(f* \mid f, X, X*) P)(f \mid y, X) df df*
+$$
+We can directly model this via the joint distribution of the observed (training data) and unobserved (testing data) responses, i.e.,
+
+$$
+P(y, y* \mid X, X*) 
+$$
+Specifically, we the generative model is defined on the entire set of predictors $X, X*$, but the likelihood only considers observed values $y$.
+
 # A multi-level GP
+
+Our first model will be an adoption of Rob's model, with the exception that we will use GPs entirely. The generative model reads:
+
+$$\begin{aligned}
+y_{rst} &\sim \text{Beta}\left(\eta_{rst}, \nu - \eta_{rst} \right) \\
+\eta_{rst} & = \nu * \text{logit}^{-1}\left(\mu + f_{rt} + g_{st} + h_{st}  \right) \\
+f_r & \sim GP(0, K(\sigma^f, \rho^f)) \\
+g_{s} & \sim GP(0, K(\sigma^g, \rho^g )) \\
+h_{s} & \sim GP(0, K(\sigma^h, \rho^h_{s})) \\
+\nu  & \sim \text{Gamma}(5, 0.01) \\
+\mu  & \sim \text{Normal}(0, 0.5)
+\end{aligned}
+$$
+The other parameters (covariance variances and lengthscales) are drawn from distributions with appropriate support. Notably, we are using a sum of three GPs per state: a regional GP with common variance and lengthscale between all regions, a state-level GP with common variance and length-scale between all states, and another state-level GP with common variance between states, but individual lengthscales for every state to account for everything that is not explained by the other two.
 
 ```{python}
 def multilevel_model(
@@ -249,6 +317,8 @@ def multilevel_model(
     )
 ```
 
+Having defined the model, posterior inference is fairly easy. We also compute 
+MCMC diagnostics to check if the posteriors mix, no divergences occur, etc.
 
 ```{python}
 mcmc_multilevel = sample(multilevel_model)
@@ -261,19 +331,23 @@ rhat_multilevel.data_vars
 ```
 
 ```{ess_multilevel}
-rhat_multilevel.data_vars
+ess_multilevel.data_vars
 ```
+
+Both of the diagnostics are ok. The R-hats should be ideally around one, while the effective sample sizes should be as high as possible.
+
+Next we make sample from the posterior predictive, compute its mean and quantiles.
 
 ```{python}
 means_multilevel, quantiles_multilevel = predict(mcmc_multilevel)
-```
 
-```{python}
 Dm = D.copy()
 Dm.loc[:, "y_hat"] = onp.array(means_multilevel)
 Dm.loc[:, "y_hat_lower"] = onp.array(quantiles_multilevel[0])
 Dm.loc[:, "y_hat_upper"] = onp.array(quantiles_multilevel[1])
 ```
+
+Let's overlay the mean of the posterior predictive to the actual data.
 
 ```{python}
 g = sns.FacetGrid(
@@ -304,16 +378,34 @@ sns.despine(left=True)
 plt.show()
 ```
 
-```{python}
-Dm[Dm.state == "WA"]
-```
-
+The predictions also look good. Let's in the end compute the average absolute error
+of the test indexes before we turn to fitting the second model:
 
 ```{python}
 np.mean(np.abs(Dm.proportion[~train_idxs].values - Dm.y_hat[~train_idxs].values))
 ```
 
 # A coregionalized GP
+
+In the model above, we used two GPs for a state, one where the lengthscale of the covariance function is shared among states and one where it is allowed to vary for every state. We can alternatively try to explicitely correlate the state-level GPs using a coregion covariance function. Our generative model has the following form:
+
+
+$$\begin{aligned}
+y_{rst} &\sim \text{Beta}\left(\eta_{rst}, \nu - \eta_{rst} \right) \\
+\eta_{rst} & = \nu * \text{logit}^{-1}\left(\mu + f_{rt} + h_{r[s]t}  \right) \\
+f_r & \sim GP \left(0, K(\sigma^f, \rho^f)\right) \\
+h_{r} & \sim GP\left(0, K(\sigma^h_{r}, \rho^h_{r}), C(\omega_r)\right) \\
+\nu  & \sim \text{Gamma}(5, 0.01) \\
+\mu  & \sim \text{Normal}(0, 0.5)
+\end{aligned}
+$$
+
+With a slight abuse of notation (and severe abuse of concepts of probability theory) the sampling statement $h_{r} \sim GP\left(0, K(\sigma^h_{r}, \rho^h_{r}), C(\omega_r)\right)$ represents a "Matrix" GP, i.e., a stochastic process of which any finite sample is a matrix normal random variable with a *fixed* number of columns. In this case the number of columns is the cardinality of ${i : i \in r}$. Or: supposing region $r$ consists of six states, then a sampling from $h_r$ yields always a matrix with six columns. 
+
+But how do we sample from it? As usual we make use of reparameterization. We first sample
+a $T \times q$ matrix of standard normals, where $T$ is the number of timepoints and $q$ is the cardinality of ${i : i \in r}$, then left multiply it with the square of the covariance matrix $ K(1, \rho^h_{r})$ (its Cholesky decomposition) while setting the covariance function's variance parameter to 1.0 (since it is not identified) and then right multiply the product with the root of the covariance $C(\omega)$.
+
+The implementation is below:
 
 ```{python}
 def coregional_model(
@@ -366,6 +458,8 @@ def coregional_model(
     )
 ```
 
+As above, after sampling we compute MCMC diagnostics.
+
 ```{python}
 mcmc_coregional = sample(coregional_model)
 rhat_coregional = az.rhat(mcmc_coregional)
@@ -380,17 +474,18 @@ rhat_coregional.data_vars
 ess_coregional.data_vars
 ```
 
+As above, the diagnostics are fine: R-hats are roughly one, no divergences, and sufficiently high effective sample sizes. Next we compute the means and quantiles of the posterior predictive:
+
 ```{python}
 means_coregional, quantiles_coregional = predict(mcmc_coregional)
-```
 
-
-```{python}
 Dc = D.copy()
 Dc.loc[:, "y_hat"] = onp.array(means_coregional)
 Dc.loc[:, "y_hat_lower"] = onp.array(quantiles_coregional[0])
 Dc.loc[:, "y_hat_upper"] = onp.array(quantiles_coregional[1])
 ```
+
+We also visualize the predictions again, overlayed over the actual data.
 
 ```{python}
 g = sns.FacetGrid(
@@ -421,15 +516,12 @@ sns.despine(left=True)
 plt.show()
 ```
 
-```{python}
-Dc[Dc.state == "WA"]
-```
+As before, the predictions are fine, and hardly different to the other model. Hence, lets'
+have a look at the average absolute error of the test data:
 
 ```{python}
 np.mean(np.abs(Dc.proportion[~train_idxs].values - Dc.y_hat[~train_idxs].values))
 ```
-
-
 
 # License
 
