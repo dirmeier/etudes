@@ -26,10 +26,13 @@ fit <- rstan::stan(
 )
 
 omega <- extract(fit)$omega
+omega_diag <- extract(fit)$omega_diag
 omega <- apply(omega, 2, mean)
 
 Omega <- matrix(0, p, p)
 Omega[lower.tri(Omega)]  <- omega
 Omega <- t(Omega) + Omega
+diag(Omega) <- apply(omega_diag, 2, mean)
 Omega
 Lambda
+s
