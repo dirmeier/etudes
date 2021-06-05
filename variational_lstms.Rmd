@@ -1,5 +1,5 @@
 ---
-title: "LSTMs for timeseries prediction"
+title: "Variational LSTMs"
 author: "Simon Dirmeier <simon.dirmeier @ web.de>"
 date: "June 2021"
 bibliography: ./references/references.bib
