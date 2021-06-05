@@ -48,7 +48,6 @@ transformed parameters {
     vector[P_upper] lambda_tilde =
       sqrt( c2 * square(lambda) ./ (c2 + square(tau) * square(lambda)) );
     omega = omega_tilde .* lambda_tilde * tau;
-
     Omega = matrix_from_vec(omega, omega_diag, P) +
       diag_matrix(rep_vector(1e-6, P));
   }
