@@ -24,9 +24,9 @@ data {
 }
 
 transformed data {
-  real slab_scale = 3;
+  real slab_scale = 1;
   real slab_scale_square = square(slab_scale);
-  real slab_df = 25;
+  real slab_df = 3;
   real half_slab_df = 0.5 * slab_df;
 }
 
