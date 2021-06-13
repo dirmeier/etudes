@@ -25,6 +25,7 @@ The repository hosts some notebooks on probabilistic models, such as Gaussian pr
 - [Structure MCMC](https://dirmeier.github.io/structure-learning-with-pymc/index.html) shows how `PyMC3` can be used to learn the structure of a Bayesian network.
 - [Mixed models](https://dirmeier.github.io/mixed-models/index.html) shows concise reference implementations for optimization of the objective of (generalized) linear mixed models.
 - [Hierarchical, coregionalized GPs](https://dirmeier.github.io/etudes/gp_coregionalization.html) implements two GP models and compares their predictive performance as well as MCMC diagnostics on an US election data set.
+- [Variational LSTMs](https://dirmeier.github.io/etudes/variational_lstms.html) implements a variational multivariate LSTM for timeseries prediction of an US election data set.
 
 ## Author
 
