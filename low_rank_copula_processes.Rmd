@@ -1,0 +1,134 @@
+---
+title: "Low-rank copula processes"
+author: "Simon Dirmeier <simon.dirmeier @ web.de>"
+date: "July 2021"
+bibliography: ./references/references.bib
+link-citations: true
+output:
+  html_document:
+    theme: lumen
+    css: ./css/custom.css
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    number_sections: no
+    highlight: pygments
+---
+
+```{r knitr_init, include=FALSE, echo=FALSE, cache=FALSE, message=FALSE}
+knitr::opts_chunk$set(comment = NA, warning = FALSE, error = FALSE,
+                      fig.align = "center", fig.width=11, fig.height=4)
+```
+
+When reading more on copulas, I recently stumbled over the @wilson2010copula, where they introduce *copula processes* i.e., non-parametric generalizations of GPs where the marginal distributions of a set of random variables can be non-Gaussian while the correlation of the random variables is encoded via the covariance matrix of the GP. After reading the paper, I was a bit puzzled what the advantage of a copula process would be in comparison to modelling a set of non-Gaussian random variables conditional on a latent Gaussian process, which ultimately lead to the creation of this notebook.
+
+Hence in this notebook, we try to reproduce the *Gaussian Copula Process Volatility* model @wilson2010copula introduced in their paper and compare it to a model that uses a latent GP for parameterization directly. We begin by shortly reviewing copulas and then implement the two models in [*Stan*](https://mc-stan.org/). Feedback and comments are welcome!
+
+```{r }
+suppressMessages({
+  library(tidyverse)
+  library(ggthemes)
+  library(colorspace)
+  
+  library(cmdstanr)
+  library(posterior)
+  library(bayesplot)
+})
+
+set.seed(42)
+color_scheme_set("darkgray")
+```
+
+# Copulas processes
+
+```{r}
+times  <- seq(1.25, 2.5, by=0.02)
+sigmas <- sin(times) * cos(times**2) + 1
+y      <- rnorm(n=length(sigmas), 0, sigmas)
+```
+
+```{r}
+data.frame(y=y, t=times, sigma=sigmas) %>% 
+  tidyr::pivot_longer(cols = c(y, sigma)) %>%
+  dplyr::mutate(name = factor(name, levels = c("y", "sigma"))) %>%
+  ggplot() +
+  geom_line(aes(t, value), color="black") +
+  facet_grid(. ~ name) +
+  theme_tufte() +
+  theme(
+    axis.text = element_text(colour = "black", size = 15),
+    strip.text = element_text(colour = "black", size = 15)
+  ) +
+  xlab(NULL) +
+  ylab(NULL)
+```
+
+```{r}
+cp.stan.file <- "./_models/cp_volatility_model.stan"
+cat(readLines(cp.stan.file), sep="\n")
+```
+
+```{r}
+m <- cmdstanr::cmdstan_model(cp.stan.file)
+
+np <- 20L
+idxs <- sort(sample(seq(y), np, replace=FALSE))
+times_inducing <- times[idxs]
+
+fit <- m$sample(
+  data=list(N=length(y),
+            times=times,
+            y=y,
+            N_inducing=np,
+            times_inducing=times_inducing),
+  seed=123,
+  chains =4,
+  parallel_chains=4
+)
+```
+
+```{r}
+sigmas.hat <- fit$draws("sigmas")
+sigmas.hat <- apply(as_draws_matrix(sigmas.hat), 2, mean)
+```
+
+```{r}
+gp.stan.file <- "./_models/gp_volatility_model.stan"
+cat(readLines(gp.stan.file), sep="\n")
+```
+
+```{r}
+m <- cmdstanr::cmdstan_model(gp.stan.file)
+
+np <- 20L
+idxs <- sort(sample(seq(y), np, replace=FALSE))
+times_inducing <- times[idxs]
+
+fit <- m$sample(
+  data=list(N=length(y),
+            times=times,
+            y=y,
+            N_inducing=np,
+            times_inducing=times_inducing),
+  seed=123,
+  chains =4,
+  parallel_chains=4
+)
+```
+
+
+# License
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png" /></a>
+
+The notebook is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
+
+# Session info
+
+```{r}
+sessionInfo()
+```
+
+# References
