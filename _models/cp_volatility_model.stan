@@ -69,9 +69,3 @@ model {
 
     y ~ normal(0, sigmas);
 }
-
-generated quantities {
-    vector[N] y_hat;
-    for (i in 1:N)
-        y_hat[i] = normal_rng(0, sigmas[i]);
-}

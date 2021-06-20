@@ -33,7 +33,7 @@ parameters {
     vector[Q] beta_spd;
     real<lower=0> alpha;
     real<lower=0> rho;
-    real gamma;
+     real gamma;
     real<lower=0> sigma_sigma;
     vector<lower=0>[N] sigmas;
 }
@@ -55,7 +55,7 @@ model {
     beta_spd ~ std_normal();
     alpha ~ std_normal();
     rho ~ inv_gamma(5, 5);
-    gamma ~ normal(0, 5);
+     gamma ~ normal(0, 5);
 
     sigma_sigma  ~ std_normal();
     sigmas ~ normal(exp(f + gamma), sigma_sigma);

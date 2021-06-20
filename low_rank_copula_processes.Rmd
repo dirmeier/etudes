@@ -1,5 +1,5 @@
 ---
-title: "Low-rank copula processes"
+title: "Hilbert-space approximate copula processes"
 author: "Simon Dirmeier <simon.dirmeier @ web.de>"
 date: "July 2021"
 bibliography: ./references/references.bib
@@ -22,9 +22,11 @@ knitr::opts_chunk$set(comment = NA, warning = FALSE, error = FALSE,
                       fig.align = "center", fig.width=11, fig.height=4)
 ```
 
-When reading more on copulas, I recently stumbled over the @wilson2010copula, where they introduce *copula processes* i.e., non-parametric generalizations of GPs where the marginal distributions of a set of random variables can be non-Gaussian while the correlation of the random variables is encoded via the covariance matrix of the GP. After reading the paper, I was a bit puzzled what the advantage of a copula process would be in comparison to modelling a set of non-Gaussian random variables conditional on a latent Gaussian process, which ultimately lead to the creation of this notebook.
+When reading more on copulas, I recently stumbled over the paper by @wilson2010copula, where they introduced *copula processes*. The paper introduces how copulas can be used to encode correlation between marginally non-Gaussian random variables using a Gaussian process. Conceptually, this seems to me to be the same as a pushforward from a GP measure to another one. After reading the paper, I was a bit puzzled what the advantage of a copula process would be in comparison to modelling the random variates conditional on a latent Gaussian process, which ultimately lead to the creation of this notebook.
 
-Hence in this notebook, we try to reproduce the *Gaussian Copula Process Volatility* model @wilson2010copula introduced in their paper and compare it to a model that uses a latent GP for parameterization directly. We begin by shortly reviewing copulas and then implement the two models in [*Stan*](https://mc-stan.org/). Feedback and comments are welcome!
+Hence in this notebook, we try to reproduce the *Gaussian Copula Process Volatility* model @wilson2010copula introduced in their paper and compare it to a model that uses a latent GP for parameterization directly. Since working with latent correlated variables can easily frustrate Stan, we use a Hilbert-space approximation to the GP which recently introduced in @solin2020hilbert @riutort2020practical1
+
+We begin by shortly reviewing copulas and then implement the two models in [*Stan*](https://mc-stan.org/). Feedback and comments are welcome!
 
 ```{r }
 suppressMessages({
@@ -40,11 +42,52 @@ suppressMessages({
 set.seed(42)
 color_scheme_set("darkgray")
 ```
+# Copula processes
 
-# Copulas processes
+Following the introduction ny @wilson2010copula, consider a multivariate random variable
+$Y = (Y_1, \dots, Y_Q)$ with cumulative distribution function (cdf) $F(Y_1 \le y_1, \dots Y_Q \le y_Q)$ and marginal cdfs $F_1, \dots, F_Q$. According to Sklar's theorem there exists an Q-copula $C: [0, 1]^Q \rightarrow [0, 1]$ such that
+
+$$\begin{equation}
+F(Y_1 \le y_1, \dots Y_Q \le y_Q) = C(F_1(y_1), \dots, F_Q(y_Q))
+\end{equation}$$
+
+Hence, with continuous marginals $C$ is given via $Q$ probability integral transforms $u_i = F_i(y_i)$, such that
+
+$$\begin{equation}
+C(u_1, \dots, u_Q) = P(U_1 \le U_1, \dots U_Q \le u_Q)
+\end{equation}$$
+
+where $U_i \sim \text{Uniform}(0, 1) \forall i = 1 \dots Q$. For instance, we can construct a Gaussian copula from a set of Gaussian random variables $Y$ via
+
+$$\begin{align}
+C(u_1, \dots, u_Q) &= \phi(\Phi^{-1} \circ u_1, \dots, u_Q) \\
+&= \phi(\Phi^{-1} \circ F_1(y_1), \dots, \Phi^{-1} \circ F_Q(y_Q))
+\end{align}$$
+
+where $phi$ is the CDF of a multivariate Gaussian (with appropriate mean and covariance) and $\Phi^{-1}$ is the quantile function of a (univariate) standard normal. 
+
+The generalization from a Gaussian copula to a Gaussian copula process is then straightforward by assuming a Gaussian process measure instead of a Gaussian measure, i.e.
+if there exists a mapping $\Psi$, such that
+
+$$\begin{align}
+\Psi(Y) \sim GP(\cdot, K)
+\end{align}$$
+
+is a Gaussian process with some covariance function $K$ then we call
+
+$$\begin{align}
+Y \sim GCP(\Psi, \cdot, K)
+\end{align}$$
+
+a Gaussian copula process (for instance, $\Psi = \Phi^{-1} \circ F$ for some CDF $F$). For more details on copulas and copula processes please be referred to @wilson2010copula.
+
+# Stochastic volatility
+
+Consider the data generating process $y_t \sim \mathcal{N}(0, \sigma^2_t)$ for $t = 1, \dots, 3$ for which we want to accurately estimate the standard deviations $\sigma_t$ and their correlation structure. We first simulate the data and visualize it.
 
 ```{r}
-times  <- seq(1.25, 2.5, by=0.02)
+N <- 500
+times  <- seq(1, 3, length.out=N)
 sigmas <- sin(times) * cos(times**2) + 1
 y      <- rnorm(n=length(sigmas), 0, sigmas)
 ```
@@ -65,24 +108,48 @@ data.frame(y=y, t=times, sigma=sigmas) %>%
   ylab(NULL)
 ```
 
+# Copulas processes
+
+Following @wilson2010copula, we model the standard deviations as Gaussian copula process. We use the following generative model for the data set:
+
+$$\begin{align}
+f & \sim GP(0, K)
+\sigma & \sim g(f, \omega) \\
+y_t & \sim \mathcal{N}(0, \sigma_t)
+\end{align}$$
+
+where $g$ is a warping function with parameters $\omega = (\beta, \gamma)$:
+
+$$\begin{align}
+g(f, \omega) = \sum_i^K \beta_i^ 2 * \log(\exp(f + \gamma_i) + 1.0)
+\end{align}$$
+
+Note that we changed the definition of the warping function a bit from the definition in the paper to avoid potential weak identifiability issues when we don't have much data.
+
+The generative model above specifies
+
+## Low-rank approximation
+
+Fitting this model in Stan can be frustratingly slow and inefficient, due to the difficulty in sampling a correlated latent variable and the high memory-footprint. For that reason we approximate the latent variable $f$ using a low-rank representation recently introduced by @solin2020hilbert and @riutort2020practical. 
+
+
+
+
 ```{r}
 cp.stan.file <- "./_models/cp_volatility_model.stan"
 cat(readLines(cp.stan.file), sep="\n")
 ```
 
-```{r}
+```{r, results='hide', warning=FALSE, message=FALSE, error=FALSE}
 m <- cmdstanr::cmdstan_model(cp.stan.file)
 
-np <- 20L
-idxs <- sort(sample(seq(y), np, replace=FALSE))
-times_inducing <- times[idxs]
-
 fit <- m$sample(
-  data=list(N=length(y),
-            times=times,
-            y=y,
-            N_inducing=np,
-            times_inducing=times_inducing),
+  data=list(N = length(y),
+            times = times,
+            y = y,
+            Q = 50,
+            L = 5 / 2 * max(times),
+            K = 1),
   seed=123,
   chains =4,
   parallel_chains=4
@@ -90,34 +157,92 @@ fit <- m$sample(
 ```
 
 ```{r}
-sigmas.hat <- fit$draws("sigmas")
-sigmas.hat <- apply(as_draws_matrix(sigmas.hat), 2, mean)
+fit$cmdstan_diagnose()
 ```
+
+```{r}
+sigmas.hat <- fit$draws("sigmas")
+sigmas.hat.mean <- apply(as_draws_matrix(sigmas.hat), 2, mean)
+sigmas.hat.ints <- t(apply(as_draws_matrix(sigmas.hat), 2, quantile, c(0.05, 0.95)))
+```
+
+
+```{r}
+plot.sigmas <- function(df) { 
+    ggplot(df) +
+    geom_ribbon(aes(x=time, ymin = sigma.hat.lower, ymax = sigma.hat.upper), fill="#A1A6C8") +
+    geom_line(aes(time, sigma, color="black")) +
+    geom_line(aes(time, sigma.hat, color="darkblue"))  +
+    scale_color_manual(values=c("black", "darkblue"),
+                       labels=c("Sigma", expression(paste(widehat("Sigma"))))) +
+    theme_tufte() +
+    theme(
+      axis.text = element_text(colour = "black", size = 15),
+      strip.text = element_text(colour = "black", size = 15),
+      legend.title = element_blank()
+    ) +
+    xlab(NULL) +
+    ylab(NULL)
+}
+```
+
+```{r}
+tibble(time=times,
+       sigma=sigmas,
+       sigma.hat=sigmas.hat.mean,
+       sigma.hat.lower=sigmas.hat.ints[, 1],
+       sigma.hat.upper=sigmas.hat.ints[, 2]) %>%
+  plot.sigmas()
+```
+
+```{r}
+mean((sigmas - sigmas.hat.mean)**2)
+```
+
+# Latent Gaussian processes
 
 ```{r}
 gp.stan.file <- "./_models/gp_volatility_model.stan"
 cat(readLines(gp.stan.file), sep="\n")
 ```
 
-```{r}
+```{r, results='hide', warning=FALSE, message=FALSE, error=FALSE}
 m <- cmdstanr::cmdstan_model(gp.stan.file)
 
-np <- 20L
-idxs <- sort(sample(seq(y), np, replace=FALSE))
-times_inducing <- times[idxs]
-
 fit <- m$sample(
-  data=list(N=length(y),
-            times=times,
-            y=y,
-            N_inducing=np,
-            times_inducing=times_inducing),
+  data=list(N = length(y),
+            times = times,
+            y = y,
+            Q = 50,
+            L = 5 / 2 * max(times)),
   seed=123,
   chains =4,
   parallel_chains=4
 )
 ```
 
+```{r}
+fit$cmdstan_diagnose()
+```
+
+```{r}
+sigmas.hat <- fit$draws("sigmas")
+sigmas.hat.mean <- apply(as_draws_matrix(sigmas.hat), 2, mean)
+sigmas.hat.ints <- t(apply(as_draws_matrix(sigmas.hat), 2, quantile, c(0.05, 0.95)))
+```
+
+```{r}
+tibble(time=times,
+       sigma=sigmas,
+       sigma.hat=sigmas.hat.mean,
+       sigma.hat.lower=sigmas.hat.ints[, 1],
+       sigma.hat.upper=sigmas.hat.ints[, 2]) %>%
+  plot.sigmas()
+```
+
+```{r}
+mean((sigmas - sigmas.hat.mean)**2)
+```
 
 # License
 
