@@ -33,14 +33,16 @@ parameters {
     vector[Q] beta_spd;
     real<lower=0> alpha;
     real<lower=0> rho;
-     real gamma;
+    real gamma;
     real<lower=0> sigma_sigma;
-    vector<lower=0>[N] sigmas;
+
+    vector<lower=0>[N] sigma_tilde;
 }
 
 
 transformed parameters {
     vector[N] f;
+    vector<lower=0>[N] sigma;
     {
         vector[Q] spd_diag;
         for(j in 1:Q) {
@@ -48,6 +50,7 @@ transformed parameters {
         }
         f = Pmat * (spd_diag .* beta_spd);
     }
+    sigma = exp(f + gamma) + sigma_sigma * sigma_tilde;
 }
 
 
@@ -55,10 +58,10 @@ model {
     beta_spd ~ std_normal();
     alpha ~ std_normal();
     rho ~ inv_gamma(5, 5);
-     gamma ~ normal(0, 5);
+    gamma ~ normal(0, 1);
 
     sigma_sigma  ~ std_normal();
-    sigmas ~ normal(exp(f + gamma), sigma_sigma);
+    sigma_tilde  ~ std_normal();
 
-    y ~ normal(0, sigmas);
+    y ~ normal(0, sigma);
 }

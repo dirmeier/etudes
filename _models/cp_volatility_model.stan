@@ -16,7 +16,7 @@ functions {
     }
 
     vector phi(vector x, real L, int j) {
-        return 1 / sqrt(L) * sin(j  * pi()/(2 * L) * (x + L));
+        return 1 / sqrt(L) * sin(sqrt(lambda(L, j)) * (x + L));
     }
 }
 
@@ -49,7 +49,7 @@ parameters {
 
 transformed parameters {
     vector[N] f;
-    vector<lower=0>[N] sigmas;
+    vector<lower=0>[N] sigma;
     {
         vector[Q] spd_diag;
         for(j in 1:Q) {
@@ -58,7 +58,7 @@ transformed parameters {
         f = Pmat * (spd_diag .* beta_spd);
     }
 
-   sigmas = warp(f, beta, gamma, K);
+   sigma = warp(f, beta, gamma, K);
 }
 
 model {
@@ -67,5 +67,5 @@ model {
     gamma ~ inv_gamma(5, 5);
     rho ~ inv_gamma(5, 5);
 
-    y ~ normal(0, sigmas);
+    y ~ normal(0, sigma);
 }
