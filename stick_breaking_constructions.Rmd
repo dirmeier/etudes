@@ -1,0 +1,508 @@
+---
+title: "Stick-breaking constructions for mixture and factor models"
+author: "Simon Dirmeier"
+date: "August 2021"
+bibliography: ./references/references.bib
+link-citations: true
+output:
+  html_document:
+    theme: lumen
+    css: ./css/custom.css
+    toc: yes
+    toc_depth: 1
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+    number_sections: no
+    highlight: pygments
+---
+
+```{r knitr_init, include=FALSE, echo=FALSE, cache=FALSE, message=FALSE}
+knitr::opts_chunk$set(comment = NA, warning = FALSE, error = FALSE,
+                      fig.align = "center",
+                      fig.width=10, fig.height=5)
+
+library(reticulate)
+use_condaenv("etudes-dev")
+```
+
+In this notebook, we will explore fitting a non-parameteric mixture and factor models via stick-breaking constructions.
+Both of these methods are traditionally fit via slice sampling or Gibbs sampling, but recent developments in probabilistic programming languages are allowing us to fit them easily via automated variational inference (or HMC). While Dirichlet process mixture models (DPMMs) are found frequently in the literature, factor models using the Indian Buffet process (IBP) have received less attention.
+
+On a personal note, I have long been enthusiastic about nonparametric Bayesian models but, except for GPs, have found them hard to work with in practice (at least for principled statistical data analysis).
+Especially Hamiltonian Monte Carlo samplers, where the simulated trajectories often divergence even for "easy" data sets, seem to be not very suited for this class of models, so I am curious of the results of this study.
+
+We implement the models and variational surrogates using [Numpyro](http://num.pyro.ai/en/latest/index.html). Feedback and comments are welcome!
+
+```{python, include=FALSE, echo=FALSE, cache=FALSE, message=FALSE}
+import logging
+logging.basicConfig(level=logging.ERROR, stream=sys.stdout)
+```
+
+We load some libraries for inference and working with data first.
+
+```{python}
+import pandas as pd
+
+import jax
+import jax.numpy as np
+import jax.scipy as sp
+import jax.random as random
+
+import numpyro
+import numpyro.distributions as dist
+import numpyro.distributions.constraints as constraints
+from numpyro.distributions.transforms import OrderedTransform
+from numpyro.infer import SVI, Trace_ELBO, TraceGraph_ELBO
+import numpyro.optim as optim
+
+import tensorflow_probability.substrates.jax.distributions as tfp_jax
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import arviz as az
+import palettes
+
+palettes.set_theme()
+numpyro.set_host_device_count(4)
+```
+
+Check if JAX recognizes the four set cores.
+
+```{python}
+jax.local_device_count()
+```
+
+```{python, include=False}
+def plot_losses(res):
+    fig, _ = plt.subplots(1, 1)
+    ax = sns.lineplot(
+      data=pd.DataFrame({"y": res.losses, "x": range(len(res.losses))}),
+      y="y", x="x",
+      color='black'
+    );
+    ax.set(xlabel="", ylabel="NLL");
+    plt.show()
+    
+    
+def plot_means(res):
+    var_posterior_mean = dist.TransformedDistribution(
+        dist.Normal(loc=res.params["q_mu_mu"], scale=res.params["q_mu_sd"]), 
+        OrderedTransform()
+    )
+    var_posterior_mean_samples = var_posterior_mean.sample(
+        random.PRNGKey(0), sample_shape=(1000,)
+    )
+    K = var_posterior_mean_samples.shape[1]
+    df = pd.DataFrame(var_posterior_mean_samples, columns=[f"mu{i}" for i in range(K)])
+    df = df.melt(var_name="Mu", value_name="Value")
+
+    plt.figure(figsize=(10, 4))
+    g = sns.FacetGrid(
+        df,     
+        col="Mu",    
+        col_wrap=5,
+        sharex=False, 
+        sharey=False
+    )
+    _ = g.map_dataframe(
+        sns.histplot, x="Value", color="darkgrey"
+    )
+
+    plt.show() 
+```
+
+# Dirichlet process mixtures
+
+We begin by simulating a data set consisting of three components and 1000 samples.
+The simulated data set should be fairly easy to fit, real world data is usually 
+significantly more noisy. 
+
+```{python}
+n_samples = 1000
+K = 3
+
+means = np.linspace(-2.0, 2.0, K)
+standard_deviations = np.array([0.25, 0.2, 0.3])
+
+Z = random.randint(
+    key=random.PRNGKey(23),
+    minval=0,
+    maxval=K, 
+    shape=(n_samples,)
+)
+
+eps = dist.Normal(0.0, 1.0).sample(
+    random.PRNGKey(23),
+    sample_shape=(n_samples,)
+)
+y = means[Z] + eps * standard_deviations[Z]
+```
+
+The three components are centered around $-2$, $0$ and $2$ with a low standard deviation.
+
+```{python}
+df = pd.DataFrame(np.vstack([y, Z]).T, columns=["y", "z"])
+_ = plt.figure(figsize=(15, 5))
+sns.histplot(
+    x="y",
+    hue="z",
+    data=df,
+    palette=palettes.discrete_sequential_colors(),
+    legend=False,
+    bins=50,
+)
+plt.show()
+```
+
+We will model the data set as a Dirichlet process mixture model using truncated stick-breaking. Specifically, we use the following generative model
+
+$$\begin{align}
+\beta & \sim \text{Gamma}(1.0, 1.0) \\
+\nu_k & \sim\text{Beta}(1.0, \beta) \, \forall k=1,\dots,\infty\\
+\pi_k & \sim \nu_k \prod_{j=1}^{k-1} (1 - \nu_j) \, \forall k=1,\dots,\infty \\
+\mu_k & \sim \text{Normal}(0.0, 1.0) \, \forall k=1,\dots,\infty \\
+\sigma_k & \sim \text{Normal}^+(1.0) \, \forall k=1,\dots,\infty \\
+y_i & \sim \sum_k^{\infty} \pi_k  \text{Normal}(\mu_k, \sigma_k)
+\end{align}$$
+
+where we truncate $K$ to a sufficiently high value. For our example, $K=10$ should suffice (@ghosal2017fundamentals, @blei2006variational).
+
+```{python}
+K_stick = 10
+```
+
+Next we defined a routine to compute the mixing weights $\pi$ from $\nu$
+
+```{python}
+def sample_stick(nu):
+    ones = np.ones((*nu.shape[:-1], 1))
+    rem = np.concatenate(
+      [ones, np.cumprod(1 - nu, axis=-1)[:-1]],
+      axis=-1
+    )
+    mix_probs = nu * rem
+    return mix_probs
+```
+
+We will infer the posterior distributions over the latent variables using the marginal mixture representation above. 
+We define the prior model first. In comparison to the generative model defined above, we will order the mean variables.
+
+```{python}
+def prior():
+    beta = numpyro.sample("beta", dist.Gamma(1.0, 1.0))
+    nu = numpyro.sample(
+        "nu",
+        dist.Beta(
+          concentration1=np.ones(K_stick), 
+          concentration0=beta
+        )
+    )
+    pi = numpyro.deterministic("pi", sample_stick(nu))
+    mu = numpyro.sample(
+        "mu",
+        dist.TransformedDistribution(
+            dist.Normal(loc=np.zeros(K_stick)), 
+            OrderedTransform()
+        ),
+    )
+    sigma = numpyro.sample("sigma", dist.HalfNormal(scale=np.ones(K_stick)))
+
+    return pi, mu, sigma
+```
+
+We then define the log-likelihood function:
+
+```{python}
+def log_likelihood(y, pi, mu, sigma):
+    lpdf_weights = np.log(pi)
+    lpdf_components = dist.Normal(loc=mu, scale=sigma).log_prob(
+        y[:, np.newaxis]
+    )
+
+    lpdf = lpdf_weights + lpdf_components
+    lpdf = sp.special.logsumexp(lpdf, axis=-1)
+    return np.sum(lpdf)
+```
+
+To test the implementation, we can make a draw from the prior and plug it into the likelihood.
+
+```{python}
+with numpyro.handlers.seed(rng_seed=23):
+    pi, mu, sigma = prior()
+    
+log_likelihood(y, pi, mu, sigma)
+```
+
+The NumPyro model itself is then only a two-liner. We include the likelihood term using a `factor` in the model specification.
+
+```{python}
+def model():
+    pi, mu, sigma = prior()
+    numpyro.factor("log_likelihood", log_likelihood(y, pi, mu, sigma))
+```
+
+We approximate the posterior distributions using mean field variational inference which requires us to define surrogate distributions for each of the latent variables. Specifially, we will use the following variational surrogates, adopting from @blei2006variational:
+
+$$\begin{align}
+q_{\lambda}(\beta) & = \text{Gamma}(\lambda_{\beta_0}, \lambda_{\beta_1}) \\
+q_{\lambda}(\nu_k) & = \text{Beta}(\lambda_{\nu_{k0}}, \lambda_{\nu_{k1}}) \, \forall k=1,\dots,\infty \\
+q_{\lambda}(\mu_k)_ & = \text{Normal}(\lambda_{\mu_{k0}}, \lambda_{\mu_{k1}}) \, \forall k=1,\dots,\infty \\
+q_{\lambda}(\sigma_k) & = \text{Normal}^+(\lambda_{\sigma_{k0}}) \, \forall k=1,\dots,\infty \\
+\end{align}$$
+
+where we constraint the scale parameters to be positive and the vector $\mu$ to be ordered. 
+
+
+```{python}
+def guide():
+    q_beta_concentration = numpyro.param(
+        "beta_concentration", init_value=1.0, constraint=constraints.positive
+    )
+    q_beta_rate = numpyro.param(
+        "beta_rate", init_value=1.0, constraint=constraints.positive
+    )
+    q_beta = numpyro.sample(
+        "beta", dist.Gamma(q_beta_concentration, q_beta_rate)
+    )
+
+    q_nu_concentration1 = numpyro.param(
+        "nu_concentration1",
+        init_value=np.ones(K_stick),
+        constraint=constraints.positive,
+    )
+    q_nu_concentration0 = numpyro.param(
+        "nu_concentration0",
+        init_value=np.ones(K_stick) * 2.0,
+        constraint=constraints.positive,
+    )
+    q_nu = numpyro.sample(
+        "nu",
+        dist.Beta(
+          concentration1=q_nu_concentration1, 
+          concentration0=q_nu_concentration0
+        )
+    )
+
+    q_mu_mu = numpyro.param(
+        "q_mu_mu", 
+        init_value=np.linspace(-2.0, 0.0, K_stick)
+    )
+    q_mu_sd = numpyro.param(
+        "q_mu_sd", 
+        init_value=np.ones(K_stick), 
+        constraint=constraints.positive
+    )
+    q_mu = numpyro.sample(
+        "mu",
+        dist.TransformedDistribution(
+            dist.Normal(loc=q_mu_mu, scale=q_mu_sd), 
+            OrderedTransform()
+        ),
+    )
+
+    q_sigma_scale = numpyro.param(
+        "q_sigma_scale",
+        init_value=np.ones(K_stick),
+        constrain=constraints.positive,
+    )
+    q_sigma = numpyro.sample(
+      "sigma", 
+      dist.HalfNormal(scale=q_sigma_scale)
+    )
+```
+
+We optimize the variational paramters $\lambda$ using NumPyro's stochastic variational inference [@hoffman2013stochastic]:
+
+```{python, warning=FALSE, message=FALSE, error=FALSE}
+adam = optim.Adam(0.01)
+svi = SVI(model, guide, adam, loss=TraceGraph_ELBO(20))
+res = svi.run(random.PRNGKey(1), num_steps=10000, progress_bar=False)
+```
+
+Let's have a look at the posterior mixing weights. Ideally most of the density is on the first three weights:
+
+```{python}
+nu = dist.Beta(
+    concentration1=res.params["nu_concentration1"],
+    concentration0=res.params["nu_concentration0"]
+)
+
+sample_stick(nu.mean)
+```
+
+Let's also visualize the posterior means:
+
+```{python}
+plot_means(res)
+```
+
+# Indian buffed factor models
+
+```{python}
+n_samples = 100
+K = 10
+```
+
+```{python}
+nu = dist.Beta(2.0, 1.0).sample(random.PRNGKey(0), sample_shape=(K,))
+pi = np.cumprod(nu)
+pi
+```
+
+```{python}
+Z = dist.BernoulliProbs(pi).sample(
+    random.PRNGKey(1),
+    sample_shape=(n_samples,)
+)
+```
+
+```{python}
+_ = plt.figure(figsize=(15, 5))
+ax = sns.heatmap(
+    Z.T,
+    linewidths=0.1,
+    cbar=False,
+    cmap=["white", "black"],
+    linecolor="darkgrey",
+)
+ax.set_ylabel("Active features")
+ax.set_xlabel("Samples")
+ax.minorticks_off()
+plt.show()
+```
+
+```{python}
+features = dist.Normal().sample(random.PRNGKey(0), sample_shape=(K,))
+y = Z @ features
+```
+
+```{python}
+df = pd.DataFrame(y, columns=["y"])
+_ = plt.figure(figsize=(15, 5))
+sns.histplot(
+  x="y",
+  data=df, 
+  legend=False,
+  bins=30
+)
+plt.show()
+```
+
+
+```{python}
+temperature = 0.000001
+rec_temperature = np.reciprocal(temperature)
+```
+
+```{python}
+def prior():
+    nu = numpyro.sample("nu", dist.Beta(np.ones(K), 1.0))
+    pi = numpyro.deterministic("pi", np.cumprod(nu))
+
+    Z = numpyro.sample(
+        "Z",
+        tfp_jax.RelaxedBernoulli(temperature, probs=pi),
+        sample_shape=(n_samples,),
+    )
+
+    eta = numpyro.sample("eta", dist.Normal(np.zeros(K), 1.0))
+    sigma = numpyro.sample("sigma", dist.HalfNormal(1.0))
+
+    return nu, pi, Z, eta, sigma
+```
+
+```{python}
+def log_likelihood(y, pi, Z, eta, sigma):
+    mean = Z @ eta
+    lpdf = dist.Normal(loc=mean, scale=sigma).log_prob(y)
+    return np.sum(lpdf)
+```
+
+```{python}
+def model():
+    _, pi, Z, eta, sigma = prior()
+    numpyro.factor("log_likelihood", log_likelihood(y, pi, Z, eta, sigma))
+```
+
+```{python}
+def guide():
+    q_nu_concentration1 = numpyro.param(
+        "nu_concentration1",
+        init_value=np.ones(K),
+        constraint=constraints.positive,
+    )
+    q_nu_concentration0 = numpyro.param(
+        "nu_concentration0",
+        init_value=np.ones(K) * 2.0,
+        constraint=constraints.positive,
+    )
+    q_nu = numpyro.sample(
+        "nu",
+        dist.Beta(
+            concentration1=q_nu_concentration1,
+            concentration0=q_nu_concentration0,
+        ),
+    )
+
+    z_logits = numpyro.param(
+        "z_logits",
+        init_value=np.tile(np.linspace(3.0, -3.0, K), (n_samples, 1))
+    )
+    Z = numpyro.sample(
+        "Z",
+        dist.TransformedDistribution(
+            dist.Logistic(z_logits * rec_temperature, rec_temperature),
+            dist.transforms.SigmoidTransform(),
+        ),
+    )
+
+    q_eta_mu = numpyro.param("eta_mu", init_value=np.zeros(K))
+    eta = numpyro.sample(
+      "eta", 
+      dist.Normal(q_eta_mu, 1.0)
+    )
+
+    q_sigma_scale = numpyro.param(
+        "sigma_scale", 
+        init_value=1.0, 
+        constrain=constraints.positive
+    )
+    q_sigma = numpyro.sample(
+      "sigma",
+      dist.HalfNormal(scale=q_sigma_scale)
+    )
+```
+
+```{python, warning=FALSE, message=FALSE, error=FALSE}
+adam = optim.Adam(0.01)
+svi = SVI(model, guide, adam, loss=TraceGraph_ELBO(20))
+res = svi.run(random.PRNGKey(1), num_steps=20, progress_bar=False)
+```
+
+```{python}
+res.losses
+```
+
+```{python}
+features
+```
+
+```{python}
+res.params["eta_mu"]
+```
+
+# License
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png" /></a>
+
+The notebook is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
+
+# Session info
+
+```{python}
+%load_ext watermark
+%watermark -n -u -v -iv
+```
+
+# References
