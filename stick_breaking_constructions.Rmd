@@ -17,6 +17,7 @@ output:
     highlight: pygments
 ---
 
+
 ```{r knitr_init, include=FALSE, echo=FALSE, cache=FALSE, message=FALSE}
 knitr::opts_chunk$set(comment = NA, warning = FALSE, error = FALSE,
                       fig.align = "center",
@@ -73,7 +74,7 @@ Check if JAX recognizes the four set cores.
 jax.local_device_count()
 ```
 
-```{python, include=False}
+```{python, include=FALSE}
 def plot_losses(res):
     fig, _ = plt.subplots(1, 1)
     ax = sns.lineplot(
@@ -108,11 +109,25 @@ def plot_means(res):
     _ = g.map_dataframe(
         sns.histplot, x="Value", color="darkgrey"
     )
-
     plt.show() 
 ```
 
-# Dirichlet process mixtures
+# Infinite mixture models
+
+Nonparametric Bayesian mixture models implement a observation model that consists of infinitely many component distributions. Using the stick-breaking construction of a Dirichlet process (@ghosal2017fundamentals, @blei2006variational), the generative model we assume here has the following form
+
+$$\begin{align}
+\beta & \sim \text{Gamma}(1.0, 1.0) \\
+\nu_k & \sim\text{Beta}(1.0, \beta) \\
+\pi_k & \sim \nu_k \prod_{j=1}^{k-1} (1 - \nu_j) \\
+\mu_k & \sim \text{Normal}(0.0, 1.0)\\
+\sigma_k & \sim \text{Normal}^+(1.0)  \\
+y_i & \sim \sum_k^{\infty} \pi_k  \text{Normal}(\mu_k, \sigma_k)
+\end{align}$$
+
+where we truncate $K$ to a sufficiently high value.
+
+## Data
 
 We begin by simulating a data set consisting of three components and 1000 samples.
 The simulated data set should be fairly easy to fit, real world data is usually 
@@ -155,18 +170,9 @@ sns.histplot(
 plt.show()
 ```
 
-We will model the data set as a Dirichlet process mixture model using truncated stick-breaking. Specifically, we use the following generative model
+## Model
 
-$$\begin{align}
-\beta & \sim \text{Gamma}(1.0, 1.0) \\
-\nu_k & \sim\text{Beta}(1.0, \beta) \, \forall k=1,\dots,\infty\\
-\pi_k & \sim \nu_k \prod_{j=1}^{k-1} (1 - \nu_j) \, \forall k=1,\dots,\infty \\
-\mu_k & \sim \text{Normal}(0.0, 1.0) \, \forall k=1,\dots,\infty \\
-\sigma_k & \sim \text{Normal}^+(1.0) \, \forall k=1,\dots,\infty \\
-y_i & \sim \sum_k^{\infty} \pi_k  \text{Normal}(\mu_k, \sigma_k)
-\end{align}$$
-
-where we truncate $K$ to a sufficiently high value. For our example, $K=10$ should suffice (@ghosal2017fundamentals, @blei2006variational).
+We will truncate the stick at a sufficiently large ($K$, the error of this truncation is, as I believe to recall from a reference I cannot find anymore, negligible).
 
 ```{python}
 K_stick = 10
@@ -185,8 +191,7 @@ def sample_stick(nu):
     return mix_probs
 ```
 
-We will infer the posterior distributions over the latent variables using the marginal mixture representation above. 
-We define the prior model first. In comparison to the generative model defined above, we will order the mean variables.
+We will infer the posterior distributions over the latent variables using the marginal mixture representation above. We define the prior model first. In comparison to the generative model defined above, we will order the mean variables.
 
 ```{python}
 def prior():
@@ -242,17 +247,16 @@ def model():
     numpyro.factor("log_likelihood", log_likelihood(y, pi, mu, sigma))
 ```
 
-We approximate the posterior distributions using mean field variational inference which requires us to define surrogate distributions for each of the latent variables. Specifially, we will use the following variational surrogates, adopting from @blei2006variational:
+We approximate the posterior distributions using mean field variational inference which requires us to define surrogate distributions for each of the latent variables. Specifically, we will use the following variational surrogates, adopting from @blei2006variational:
 
 $$\begin{align}
 q_{\lambda}(\beta) & = \text{Gamma}(\lambda_{\beta_0}, \lambda_{\beta_1}) \\
-q_{\lambda}(\nu_k) & = \text{Beta}(\lambda_{\nu_{k0}}, \lambda_{\nu_{k1}}) \, \forall k=1,\dots,\infty \\
-q_{\lambda}(\mu_k)_ & = \text{Normal}(\lambda_{\mu_{k0}}, \lambda_{\mu_{k1}}) \, \forall k=1,\dots,\infty \\
-q_{\lambda}(\sigma_k) & = \text{Normal}^+(\lambda_{\sigma_{k0}}) \, \forall k=1,\dots,\infty \\
+q_{\lambda}(\nu_k) & = \text{Beta}(\lambda_{\nu_{k0}}, \lambda_{\nu_{k1}}) \\
+q_{\lambda}(\mu_k)_ & = \text{Normal}(\lambda_{\mu_{k0}}, \lambda_{\mu_{k1}})  \\
+q_{\lambda}(\sigma_k) & = \text{Normal}^+(\lambda_{\sigma_{k}})\\
 \end{align}$$
 
 where we constraint the scale parameters to be positive and the vector $\mu$ to be ordered. 
-
 
 ```{python}
 def guide():
@@ -312,7 +316,9 @@ def guide():
     )
 ```
 
-We optimize the variational paramters $\lambda$ using NumPyro's stochastic variational inference [@hoffman2013stochastic]:
+## Inference
+
+We optimize the variational parameters $\lambda$ using NumPyro's stochastic variational inference [@hoffman2013stochastic]:
 
 ```{python, warning=FALSE, message=FALSE, error=FALSE}
 adam = optim.Adam(0.01)
@@ -337,25 +343,51 @@ Let's also visualize the posterior means:
 plot_means(res)
 ```
 
-# Indian buffed factor models
+# Infinite latent feature models
+
+In statistical analysis, we a frequently interested in decomposing data into a small number of components. Latent feature models decompose a data set $Y$ into a binary matrix $Z$ and a matrix of loadings $\Psi$ 
+
+$$\begin{equation}
+Y = Z \Psi + \epsilon
+\end{equation}$$
+
+where $\epsilon$ is a Gaussian noise matrix. Nonparametric factor models implement a observation model that consists of infinitely many features $K=\infty$. Using the stick-breaking construction of a Indian buffet process (@ghosal2017fundamentals, @doshi2009variational, @teh2007stick, @paisley2009nonparametric), we will explore fitting the following generative model using variational inference
+
+$$\begin{align}
+\beta & \sim \text{Gamma}(1.0, 1.0) \\
+\nu_k & \sim\text{Beta}(1.0, \beta) \\
+\pi_k & = \prod_{j=1}^{k} \nu_j \\
+z_{ik} & \sim \text{Bernoulli}(\pi_k)\\
+\Psi & \sim \text{MatrixNormal}(0, I, I) \\
+\sigma_k & \sim \text{Normal}^+(1.0)  \\
+y_i & \sim \text{MvNormal}(z_i^T \Psi, \sigma_k I)
+\end{align}$$
+
+where we again truncate $K$ to a sufficiently high value. 
+
+## Data
+
+As above, we simulate some artificial data for inference. We'll simulate data with $Q=10$ dimensions and a latent dimensionality of $K=5$.
 
 ```{python}
 n_samples = 100
-K = 10
+K = 5
+Q = 10
 ```
 
+Next we simulate the probabilities that a latent feature is active and the binary feature matrix itself.
+
 ```{python}
-nu = dist.Beta(2.0, 1.0).sample(random.PRNGKey(0), sample_shape=(K,))
+nu = dist.Beta(5.0, 1.0).sample(random.PRNGKey(0), sample_shape=(K,))
 pi = np.cumprod(nu)
-pi
-```
 
-```{python}
-Z = dist.BernoulliProbs(pi).sample(
-    random.PRNGKey(1),
-    sample_shape=(n_samples,)
+Z = dist.Bernoulli(probs=pi).sample(
+  random.PRNGKey(1),
+  sample_shape=(n_samples,)
 )
 ```
+
+The binary feature matrix is shown below.
 
 ```{python}
 _ = plt.figure(figsize=(15, 5))
@@ -372,30 +404,49 @@ ax.minorticks_off()
 plt.show()
 ```
 
+We finally simulate the actual data
+
 ```{python}
-features = dist.Normal().sample(random.PRNGKey(0), sample_shape=(K,))
-y = Z @ features
+psi = dist.Normal().sample(
+  random.PRNGKey(0), 
+  sample_shape=(K, Q)
+)
+eps = dist.Normal(0.0, 0.1).sample(
+  random.PRNGKey(0), 
+  sample_shape=(n_samples, Q)
+)
+y = Z @ psi + eps
 ```
 
 ```{python}
-df = pd.DataFrame(y, columns=["y"])
-_ = plt.figure(figsize=(15, 5))
-sns.histplot(
-  x="y",
-  data=df, 
-  legend=False,
-  bins=30
+df = pd.DataFrame(y, columns=[f"y{i}" for i in range(Q)])
+df = df.melt(var_name="y", value_name="Value")
+
+_ = plt.figure(figsize=(10, 4))
+g = sns.FacetGrid(
+  df, 
+  col="y", 
+  col_wrap=5, 
+  sharex=False, 
+  sharey=False
+)
+_ = g.map_dataframe(
+  sns.histplot, 
+  x="Value",
+  color="darkgrey"
 )
 plt.show()
 ```
 
+## Model
+
+Since our model involves binary latent parameters, we will use a continuous relaxation using the concrete distribution [@maddison2016concrete, @jang2016categorical] which we, since this distribution is still
+missing in NumPyro, can use via a TensorFlow Probability wrapper. The prior model is shown below:
 
 ```{python}
 temperature = 0.000001
 rec_temperature = np.reciprocal(temperature)
-```
 
-```{python}
 def prior():
     nu = numpyro.sample("nu", dist.Beta(np.ones(K), 1.0))
     pi = numpyro.deterministic("pi", np.cumprod(nu))
@@ -406,24 +457,43 @@ def prior():
         sample_shape=(n_samples,),
     )
 
-    eta = numpyro.sample("eta", dist.Normal(np.zeros(K), 1.0))
-    sigma = numpyro.sample("sigma", dist.HalfNormal(1.0))
+    psi = numpyro.sample("psi", dist.Normal(np.zeros((K, Q)), 1.0))
+    sigma = numpyro.sample("sigma", dist.HalfNormal(np.ones(Q)))
 
-    return nu, pi, Z, eta, sigma
+    return nu, pi, Z, psi, sigma
 ```
 
+We implement the log likelihood again as a separate function to be able to easily check the code:
+
 ```{python}
-def log_likelihood(y, pi, Z, eta, sigma):
-    mean = Z @ eta
-    lpdf = dist.Normal(loc=mean, scale=sigma).log_prob(y)
+def log_likelihood(y, pi, Z, psi, sigma):
+    mean = Z @ psi
+    lpdf = dist.Independent(
+        dist.Normal(loc=mean, scale=sigma), reinterpreted_batch_ndims=1
+    ).log_prob(y)
+    
     return np.sum(lpdf)
 ```
 
+The actual NumPyro model consists of the prior model and a factor that increments the log-density via a `factor`:
+
 ```{python}
 def model():
-    _, pi, Z, eta, sigma = prior()
-    numpyro.factor("log_likelihood", log_likelihood(y, pi, Z, eta, sigma))
+    _, pi, Z, psi, sigma = prior()
+    numpyro.factor("log_likelihood", log_likelihood(y, pi, Z, psi, sigma))
 ```
+
+We approximate the posterior distributions again using mean field variational inference again which requires us to place surrogates over each latent variable. We use the following guides, adopting from @doshi2009variational
+
+$$\begin{align}
+q_{\lambda}(\beta) & = \text{Gamma}(\lambda_{\beta_0}, \lambda_{\beta_1}) \\
+q_{\lambda}(\nu_k) & = \text{Beta}(\lambda_{\nu_{k0}}, \lambda_{\nu_{k1}})\\
+q_{\lambda}(z_{ik}) & = \text{RelaxedBernoulli}(\lambda_{z_{ik}})\\
+q_{\lambda}(\Psi) & = \text{MatrixNormal}\left(\lambda_{\Psi_{0}}, I, \text{diag}(\lambda_{\Psi_{1}})\right)
+q_{\lambda}(\sigma_k) & = \text{Normal}^+(\lambda_{\sigma_{k}})\\
+\end{align}$$
+
+where we constraint the scale parameters to be positive.
 
 ```{python}
 def guide():
@@ -457,15 +527,20 @@ def guide():
         ),
     )
 
-    q_eta_mu = numpyro.param("eta_mu", init_value=np.zeros(K))
-    eta = numpyro.sample(
-      "eta", 
-      dist.Normal(q_eta_mu, 1.0)
+    q_psi_mu = numpyro.param("psi_mu", init_value=np.zeros((K, Q)))
+    q_psi_sd = numpyro.param(
+        "psi_sd",
+        init_value=np.ones((K, Q)),
+        constraint=constraints.positive,
+    )
+    psi = numpyro.sample(
+      "psi", 
+      dist.Normal(q_psi_mu, q_psi_sd)
     )
 
     q_sigma_scale = numpyro.param(
-        "sigma_scale", 
-        init_value=1.0, 
+        "sigma_scale",
+        init_value=np.ones(Q),
         constrain=constraints.positive
     )
     q_sigma = numpyro.sample(
@@ -474,23 +549,34 @@ def guide():
     )
 ```
 
+## Inference
+
+We use NumPyro again for fitting the variational parameters.
+
 ```{python, warning=FALSE, message=FALSE, error=FALSE}
 adam = optim.Adam(0.01)
 svi = SVI(model, guide, adam, loss=TraceGraph_ELBO(20))
 res = svi.run(random.PRNGKey(1), num_steps=20, progress_bar=False)
 ```
 
+Let's have a look at the losses
+
 ```{python}
 res.losses
 ```
 
-```{python}
-features
-```
+Next we check out the means of the variational posterior of $\Psi$
 
 ```{python}
-res.params["eta_mu"]
+res.params["psi_mu"]
 ```
+
+In comparison, these are the real features:
+
+```{python}
+psi
+```
+
 
 # License
 
@@ -500,9 +586,9 @@ The notebook is licensed under a <a rel="license" href="http://creativecommons.o
 
 # Session info
 
-```{python}
-%load_ext watermark
-%watermark -n -u -v -iv
+```{python, include=FALSE}
+import session_info
+session_info.show()
 ```
 
 # References
