@@ -1,5 +1,5 @@
 ---
-title: "Stick-breaking constructions for mixture and factor models"
+title: "Stick-breaking constructions for nonparametric Bayesian models"
 author: "Simon Dirmeier"
 date: "August 2021"
 bibliography: ./references/references.bib
@@ -14,7 +14,6 @@ output:
       collapsed: no
       smooth_scroll: yes
     number_sections: no
-    highlight: pygments
 ---
 
 
@@ -27,11 +26,11 @@ library(reticulate)
 use_condaenv("etudes-dev")
 ```
 
-In this notebook, we will explore fitting a non-parameteric mixture and factor models via stick-breaking constructions.
-Both of these methods are traditionally fit via slice sampling or Gibbs sampling, but recent developments in probabilistic programming languages are allowing us to fit them easily via automated variational inference (or HMC). While Dirichlet process mixture models (DPMMs) are found frequently in the literature, factor models using the Indian Buffet process (IBP) have received less attention.
+In this notebook, we will explore stick-breaking constructions for non-parameteric mixture and factor models and fit them via variational inference.
+Both of these model are traditionally fit via, for instance, slice sampling or Gibbs sampling, but recent developments in probabilistic programming languages are allowing us to fit them easily via automated variational inference. While nonparametric mixture models using the Dirichlet process (DP) as prior are found frequently in the literature, factor models using the Indian Buffet process (IBP) have received less attention.
 
-On a personal note, I have long been enthusiastic about nonparametric Bayesian models but, except for GPs, have found them hard to work with in practice (at least for principled statistical data analysis).
-Especially Hamiltonian Monte Carlo samplers, where the simulated trajectories often divergence even for "easy" data sets, seem to be not very suited for this class of models, so I am curious of the results of this study.
+I have long been enthusiastic about nonparametric Bayesian models but, except for GPs, have found them hard to work with in practice (at least for principled statistical data analysis).
+Especially Hamiltonian Monte Carlo samplers, as implemented in Stan or NumPyro, where the simulated trajectories often divergence even for "easy" data sets, seem to be not very suited for this class of models, so I am curious of the results of this study.
 
 We implement the models and variational surrogates using [Numpyro](http://num.pyro.ai/en/latest/index.html). Feedback and comments are welcome!
 
@@ -54,7 +53,7 @@ import numpyro
 import numpyro.distributions as dist
 import numpyro.distributions.constraints as constraints
 from numpyro.distributions.transforms import OrderedTransform
-from numpyro.infer import SVI, Trace_ELBO, TraceGraph_ELBO
+from numpyro.infer import SVI, Trace_ELBO
 import numpyro.optim as optim
 
 import tensorflow_probability.substrates.jax.distributions as tfp_jax
@@ -119,13 +118,13 @@ Nonparametric Bayesian mixture models implement a observation model that consist
 $$\begin{align}
 \beta & \sim \text{Gamma}(1.0, 1.0) \\
 \nu_k & \sim\text{Beta}(1.0, \beta) \\
-\pi_k & \sim \nu_k \prod_{j=1}^{k-1} (1 - \nu_j) \\
+\pi_k & = \nu_k \prod_{j=1}^{k-1} (1 - \nu_j) \\
 \mu_k & \sim \text{Normal}(0.0, 1.0)\\
 \sigma_k & \sim \text{Normal}^+(1.0)  \\
 y_i & \sim \sum_k^{\infty} \pi_k  \text{Normal}(\mu_k, \sigma_k)
 \end{align}$$
 
-where we truncate $K$ to a sufficiently high value.
+where $k$ indexes a component distribution and $i$ indexes a data point. 
 
 ## Data
 
@@ -156,10 +155,10 @@ y = means[Z] + eps * standard_deviations[Z]
 
 The three components are centered around $-2$, $0$ and $2$ with a low standard deviation.
 
-```{python}
+```{python, results='hide'}
 df = pd.DataFrame(np.vstack([y, Z]).T, columns=["y", "z"])
 _ = plt.figure(figsize=(15, 5))
-sns.histplot(
+_ = sns.histplot(
     x="y",
     hue="z",
     data=df,
@@ -172,13 +171,13 @@ plt.show()
 
 ## Model
 
-We will truncate the stick at a sufficiently large ($K$, the error of this truncation is, as I believe to recall from a reference I cannot find anymore, negligible).
+We will truncate the stick at a sufficiently large $K$ (the error of this truncation is, as I believe to recall from a reference I cannot find anymore, negligible).
 
 ```{python}
 K_stick = 10
 ```
 
-Next we defined a routine to compute the mixing weights $\pi$ from $\nu$
+Next we define a routine to compute the mixing weights $\pi$ from $\nu$.
 
 ```{python}
 def sample_stick(nu):
@@ -221,9 +220,7 @@ We then define the log-likelihood function:
 ```{python}
 def log_likelihood(y, pi, mu, sigma):
     lpdf_weights = np.log(pi)
-    lpdf_components = dist.Normal(loc=mu, scale=sigma).log_prob(
-        y[:, np.newaxis]
-    )
+    lpdf_components = dist.Normal(loc=mu, scale=sigma).log_prob(y[:, np.newaxis])
 
     lpdf = lpdf_weights + lpdf_components
     lpdf = sp.special.logsumexp(lpdf, axis=-1)
@@ -247,12 +244,12 @@ def model():
     numpyro.factor("log_likelihood", log_likelihood(y, pi, mu, sigma))
 ```
 
-We approximate the posterior distributions using mean field variational inference which requires us to define surrogate distributions for each of the latent variables. Specifically, we will use the following variational surrogates, adopting from @blei2006variational:
+We approximate the posterior distributions using mean field variational inference which requires us to define surrogate distributions for each of the latent variables. Specifically, we will use the following variational surrogates, adopting from @blei2006variational
 
 $$\begin{align}
 q_{\lambda}(\beta) & = \text{Gamma}(\lambda_{\beta_0}, \lambda_{\beta_1}) \\
 q_{\lambda}(\nu_k) & = \text{Beta}(\lambda_{\nu_{k0}}, \lambda_{\nu_{k1}}) \\
-q_{\lambda}(\mu_k)_ & = \text{Normal}(\lambda_{\mu_{k0}}, \lambda_{\mu_{k1}})  \\
+q_{\lambda}(\mu_k) & = \text{Normal}(\lambda_{\mu_{k0}}, \lambda_{\mu_{k1}})  \\
 q_{\lambda}(\sigma_k) & = \text{Normal}^+(\lambda_{\sigma_{k}})\\
 \end{align}$$
 
@@ -321,9 +318,11 @@ def guide():
 We optimize the variational parameters $\lambda$ using NumPyro's stochastic variational inference [@hoffman2013stochastic]:
 
 ```{python, warning=FALSE, message=FALSE, error=FALSE}
+num_steps = 20000
+
 adam = optim.Adam(0.01)
-svi = SVI(model, guide, adam, loss=TraceGraph_ELBO(20))
-res = svi.run(random.PRNGKey(1), num_steps=10000, progress_bar=False)
+svi = SVI(model, guide, adam, loss=Trace_ELBO(20))
+res = svi.run(random.PRNGKey(1), num_steps=num_steps, progress_bar=False)
 ```
 
 Let's have a look at the posterior mixing weights. Ideally most of the density is on the first three weights:
@@ -345,13 +344,13 @@ plot_means(res)
 
 # Infinite latent feature models
 
-In statistical analysis, we a frequently interested in decomposing data into a small number of components. Latent feature models decompose a data set $Y$ into a binary matrix $Z$ and a matrix of loadings $\Psi$ 
+In statistical analysis, we a frequently interested in decomposing a high-dimensional data set into a small number of components. Latent feature models decompose a data set $Y$ into a binary matrix $Z$ and a matrix of loadings $\Psi$ 
 
 $$\begin{equation}
 Y = Z \Psi + \epsilon
 \end{equation}$$
 
-where $\epsilon$ is a Gaussian noise matrix. Nonparametric factor models implement a observation model that consists of infinitely many features $K=\infty$. Using the stick-breaking construction of a Indian buffet process (@ghosal2017fundamentals, @doshi2009variational, @teh2007stick, @paisley2009nonparametric), we will explore fitting the following generative model using variational inference
+where $\epsilon$ is a Gaussian noise matrix. Nonparametric factor models implement a observation model that consists of infinitely many features. Using the stick-breaking construction of a Indian buffet process (@ghosal2017fundamentals, @doshi2009variational, @teh2007stick, @paisley2009nonparametric), we will explore fitting the following generative model using variational inference
 
 $$\begin{align}
 \beta & \sim \text{Gamma}(1.0, 1.0) \\
@@ -363,7 +362,7 @@ z_{ik} & \sim \text{Bernoulli}(\pi_k)\\
 y_i & \sim \text{MvNormal}(z_i^T \Psi, \sigma_k I)
 \end{align}$$
 
-where we again truncate $K$ to a sufficiently high value. 
+where $k$ indexes a component distribution and $i$ indexes a data point. 
 
 ## Data
 
@@ -389,7 +388,7 @@ Z = dist.Bernoulli(probs=pi).sample(
 
 The binary feature matrix is shown below.
 
-```{python}
+```{python, message=FALSE, results='hide'}
 _ = plt.figure(figsize=(15, 5))
 ax = sns.heatmap(
     Z.T,
@@ -398,16 +397,16 @@ ax = sns.heatmap(
     cmap=["white", "black"],
     linecolor="darkgrey",
 )
-ax.set_ylabel("Active features")
-ax.set_xlabel("Samples")
-ax.minorticks_off()
+_ = ax.set_ylabel("Active features")
+_ = ax.set_xlabel("Samples")
+_ = ax.minorticks_off()
 plt.show()
 ```
 
-We finally simulate the actual data
+We finally simulate the actual data and visualize it.
 
 ```{python}
-psi = dist.Normal().sample(
+psi = dist.Normal(0.0, 3.0).sample(
   random.PRNGKey(0), 
   sample_shape=(K, Q)
 )
@@ -440,7 +439,7 @@ plt.show()
 
 ## Model
 
-Since our model involves binary latent parameters, we will use a continuous relaxation using the concrete distribution [@maddison2016concrete, @jang2016categorical] which we, since this distribution is still
+Since our model involves binary latent parameters, we will use a continuous relaxation using the concrete distribution (@maddison2016concrete, @jang2016categorical) which we, since this distribution is still
 missing in NumPyro, can use via a TensorFlow Probability wrapper. The prior model is shown below:
 
 ```{python}
@@ -489,7 +488,7 @@ $$\begin{align}
 q_{\lambda}(\beta) & = \text{Gamma}(\lambda_{\beta_0}, \lambda_{\beta_1}) \\
 q_{\lambda}(\nu_k) & = \text{Beta}(\lambda_{\nu_{k0}}, \lambda_{\nu_{k1}})\\
 q_{\lambda}(z_{ik}) & = \text{RelaxedBernoulli}(\lambda_{z_{ik}})\\
-q_{\lambda}(\Psi) & = \text{MatrixNormal}\left(\lambda_{\Psi_{0}}, I, \text{diag}(\lambda_{\Psi_{1}})\right)
+q_{\lambda}(\Psi) & = \text{MatrixNormal}\left(\lambda_{\Psi_{0}}, I, \text{diag}(\lambda_{\Psi_{1}})\right) \\
 q_{\lambda}(\sigma_k) & = \text{Normal}^+(\lambda_{\sigma_{k}})\\
 \end{align}$$
 
@@ -555,8 +554,8 @@ We use NumPyro again for fitting the variational parameters.
 
 ```{python, warning=FALSE, message=FALSE, error=FALSE}
 adam = optim.Adam(0.01)
-svi = SVI(model, guide, adam, loss=TraceGraph_ELBO(20))
-res = svi.run(random.PRNGKey(1), num_steps=20, progress_bar=False)
+svi = SVI(model, guide, adam, loss=Trace_ELBO(20))
+res = svi.run(random.PRNGKey(1), num_steps=num_steps, progress_bar=False)
 ```
 
 Let's have a look at the losses
