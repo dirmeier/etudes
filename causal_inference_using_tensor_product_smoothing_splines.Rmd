@@ -98,7 +98,7 @@ N_O = 20
 N_I = N_O * 10
 P_X = P_U = 1
 
-var_u = var_x = var_tr = var_y = 0.5
+sigma_u = sigma_x = sigma_tr = sigma_y = 0.1
 ```
 
 ```{python}
@@ -116,7 +116,7 @@ rng_key, sample_key = random.split(rng_key, 2)
 U = random.multivariate_normal(
     sample_key, 
     mean=np.zeros(P_U),
-    cov=np.eye(P_U) * var_u,
+    cov=np.eye(P_U) * sigma_u,
     shape=(N_O,)
 )
 ```
@@ -126,7 +126,7 @@ rng_key, sample_key = random.split(rng_key, 2)
 X_eps = random.multivariate_normal(
     sample_key, 
     mean=np.zeros(P_X),
-    cov=np.eye(P_X) * var_x,
+    cov=np.eye(P_X) * sigma_x,
     shape=(N_I,)    
 )
 X = U[i_to_o] + X_eps
@@ -142,7 +142,7 @@ rng_key, sample_key = random.split(rng_key, 2)
 tr_eps = random.normal(
     sample_key, 
     shape=(N_I,)
-) * np.sqrt(var_tr)
+) * sigma_tr
 tr = gt(X, U, i_to_o) + tr_eps
 ```
 
@@ -157,13 +157,13 @@ rng_key, sample_key = random.split(rng_key, 2)
 y_eps = random.normal(
     sample_key, 
     shape=(N_I,)
-) * np.sqrt(var_y)
+) * sigma_y
 y = gy(tr, X, U, i_to_o) + y_eps
 ```
 
 Let's visualize this. Note that the functional relationship between $U$ and any other variable $X, T, Y$ is - similar to an ANOVA analysis - basically discrete, since $N_O < N_I$.
 ```{python}
-D = pd.DataFrame({"$U$": U[i_to_o,], "$X$": X[:,0], "$T$": tr, "$Y$": y})
+D = pd.DataFrame({"$U$": U[i_to_o, 0], "$X$": X[:,0], "$T$": tr, "$Y$": y})
 
 sns.pairplot(
     D,
@@ -195,7 +195,7 @@ We sample a total of $3000$ times on two separate chains of which we discard the
 
 ```{python}
 @timer
-def sample(model, data, iter_warmup=1000, iter_sampling=3000):
+def sample(model, data, iter_warmup=10, iter_sampling=30):
   return model.sample(
         data=data, 
         iter_warmup=iter_warmup,
@@ -226,10 +226,10 @@ The regression of $X$ on $U$ is a Gaussian process latent variable model which i
 Let's try to fit this model:
 
 ```{python}
-tps_models_folder = "_models/causal_inference_using_tensor_product_smoothing_splines"
-tps_model_file = os.path.join(tps_models_folder, "gp_model.stan")
+models_folder = "_models/causal_inference_using_tensor_product_smoothing_splines"
+gp_model_file = os.path.join(models_folder, "gp_model.stan")
 
-model = CmdStanModel(stan_file=model_file)
+model = CmdStanModel(stan_file=gp_model_file)
 fit = sample(model, data)
 ```
 
@@ -251,11 +251,13 @@ plt.show()
 ```
 
 ```{python}
-_, axes = plt.subplots(ncols=2, nrows=2, figsize=(12, 6))
+_, axes = plt.subplots(ncols=2, nrows=2, figsize=(12, 8))
 az.plot_trace(
-    posterior_az, axes=axes, var_names=["u_scale", "U"]
+    posterior_az,
+    axes=axes,
+    var_names=["u_scale", "U"],
     chain_prop={"color": palettes.discrete_qualitative_colors(2)}
-);
+)
 plt.show()
 ```
 
@@ -279,9 +281,9 @@ This change is somewhat sensible. This $N_O < N_I$ we cannot really estimate a s
 
 
 ```{python}
-tps_model_file = os.path.join(tps_models_folder, "gp+linear_model.stan")
+gplinear_model_file = os.path.join(models_folder, "gp+linear_model.stan")
 
-model = CmdStanModel(stan_file=model_file)
+model = CmdStanModel(stan_file=gplinear_model_file)
 fit = sample(model, data)
 ```
 
@@ -300,9 +302,211 @@ ax.legend(title="", bbox_to_anchor=(1.2, 0.5))
 plt.show()
 ```
 
-The chains still don't seem to converge! The effective sample sizes are worrisome, too! Apparantly the GP hyperparameter still do not allow efficiently exploring the posterior manifold.
+```{python}
+ite = gy(tr + 1, X, U, i_to_o) - y
+ite_star = fit.draws_pd(vars="ite")
+ite_star = np.quantile(
+  ite_star.values,
+  axis=0, 
+  q=np.array([0.05, 0.1, 0.25, 0.5, 0.75, 0.90, 0.95])
+)
+
+_, ax = plt.subplots(figsize=(8, 4))
+sns.histplot(ite, color="#233B43", ax=ax, stat="density", bins=30)
+for i in range(ite_star.shape[0]):
+    sns.kdeplot(ite_star[i, :], color=palettes.discrete_qualitative_colors(3)[2], ax=ax)
+plt.show()
+```
+
+
+The chains still don't seem to converge! The effective sample sizes are worrisome, too. Apparently the GP hyperparameter still do not allow efficiently exploring the posterior manifold.
 
 # A tensor-product smoothing spline model
+
+Both models seem to be too hard to sample from to make work in practice and draw statistically reliable conclusions for decision making. As a final approach we simplify the model one more time and replace all functional GP relationships with smoothing splines. Since the regressions $f: U, X \rightarrow T$ and $f: U, X, T \rightarrow Y$ use vectorial inputs, we will use a tensor-product smoothing spline [@wood2006low] based on B-spline bases. 
+
+A spline with of order $m + 1$ with $K$ parameters can be represented as a linear combination of B-spline bases as
+
+$$\begin{equation}
+f(x) = \sum_i^K \alpha_i B_{i, m}(x)
+\end{equation}$$
+
+where $B_i^m$ are defined recursively via
+
+$$\begin{equation}
+B_{i, 1}(x) = \begin{cases}
+    1 & \text{if } k_i \le x < k_{i + 1}\\
+    0 & \text{otherwise}
+\end{cases}
+\end{equation}$$
+
+and
+
+$$\begin{equation}
+B_{i, m}(x)_ = \frac{x - k_i}{k_{i + m + 1} - k_i} B_{i, m - 1}(x) + \frac{k_{i + m + 2} - x}{k_{i + m + 2} - k_{i + 1}} B_{i + 1, m - 1}(x)
+\end{equation}$$
+
+To define a B-spline basis with $K$ parameters and order $m + 1$ we will need to define a $K + m + 2$-dimensional vector of knots $k$ (which in practice can be a bit annoying). 
+As Milad Kharratzadeh notes in his [spline case study](https://mc-stan.org/users/documentation/case-studies/splines_in_stan.html), we should define an extended knot sequence to cover the whole span of the knots, but for this case-study we follow the description in @wood2017generalized to avoid confusion.
+
+
+To build a B-spline basis in Stan we consequently need to implement this recursive definition. Since this definition only handles univariate inputs, we will use a tensor-product basis over multiple variables. 
+Following @wood2006low, the constructionsof a tensor-product basis starts by constructing low-rank bases $B^V$ for every variable $V$. We then define a tensor-product spline over a set of variables as
+
+$$\begin{equation}
+f(x, y; \alpha) = \sum_k^K \sum_l^L \alpha_{kl} B^X_{k,m} B^Y_{l,m}
+\end{equation}$$
+We can extend this construction further for a third variable
+
+$$\begin{equation}
+f(x, y, z; \alpha) = \sum_k^K \sum_l^L \sum_j^J \alpha_{klj} B^X_{k,m} B^Y_{l,m}  B^Z_{j,m}
+\end{equation}$$
+
+This construction is all we need to define a smooth functions over the three variables. For our model, we will use B-spline bases which are not necessarily low-rank. However, by regularize adjacent pairs of coefficients $\alpha$ to control the wiggliness of the basis function (see @wood2017generalized who explains this way better). 
+
+
+Let's test these two models. First we simulate data and fit a conventional B-spline.
+
+```{python, echo=FALSE, messages=FALSE, warnings=FALSE}
+n = 100
+x = np.linspace(-3, 2, n)
+y_mean  = 2 * np.sin(x)
+y = y_mean + random.normal(
+  random.PRNGKey(0), shape=(n,)
+) * 0.25
+
+data = {
+    "N": 100,
+    "X": onp.asarray(x),
+    "y": onp.asarray(y),
+    "degree": 2,
+    "n_knots": 6,
+    "knots": onp.linspace(-4, 4, 6)
+}
+
+tps_file = os.path.join(models_folder, "b_spline.stan")
+model = CmdStanModel(stan_file=tps_file)
+fit = model.sample(data=data, chains=2)
+y_star = np.mean(fit.draws_pd(vars="y_hat").values, axis=0)
+
+_, ax = plt.subplots(figsize=(8, 4))
+_ = ax.scatter(x, y, marker="+", color="black")
+_ = ax.plot(x, y_star, color=palettes.discrete_qualitative_colors(4)[2])
+plt.show()
+```
+
+Then we simulate a regression model with two covariables and fit a tensor-product smoother with B-spline bases.
+
+```{python, echo=FALSE}
+n = 100
+x1       = np.linspace(-3, 2, n)
+x2       = np.linspace(3, -2, n)
+y_mean  = x1 * np.sin(x1) - np.cos(x2)
+y = y_mean + random.normal(
+  random.PRNGKey(0), shape=(n,)
+) * 0.25
+
+data = {
+    "N": n,
+    "X": onp.asarray(np.vstack([x1, x2])).T,
+    "y": onp.asarray(y),
+    "degree": 2,
+    "n_knots": 6,
+    "x1_knots": onp.linspace(-4, 4, 6),
+    "x2_knots": onp.linspace(-4, 4, 6)
+}
+
+tps_file = os.path.join(models_folder, "tp_spline.stan")
+model = CmdStanModel(stan_file=tps_file)
+fit = model.sample(data=data, chains=2)
+y_star = np.mean(fit.draws_pd(vars="y_hat").values, axis=0)
+
+_, axes = plt.subplots(figsize=(12, 4), ncols=2)
+for i, (ax, x) in enumerate(zip(axes, [x1, x2])):
+    _ = axes[i].scatter(x, y, marker="+", color="black")
+    _ = axes[i].plot(x, y_star, color=palettes.discrete_qualitative_colors(4)[2])
+plt.show()
+```
+
+This worked nicely! The fit is not as good as with a Gaussian process but easy to fit. Replacing the GPs in our causal structural model with smoothing splines yields the following generative model
+
+$$\begin{align}
+\sigma & \sim \text{HalfNormal}(1.0) \\
+u & \sim  \text{MvNormal}(0, \sigma_U^2 I) \\
+\beta_X & \sim  \text{Normal}(0, 1) \\
+x_i & \sim \text{Normal}\left(u_{o = \text{Pa}(i)}\beta_X, \sigma_X^2 \right) \\
+\beta_{T0} & \sim \text{Normal}(0, 1) \\
+\beta_{Ti} & \sim \text{Normal}(\beta_{T,i-1}, \sigma_{\beta_T}) \\
+t_i & \sim \text{Normal}\left(f\left(u_{o = \text{Pa}(i)}, x_i\right)^T \beta_T, \sigma_T^2 I \right) \\
+\beta_{Y0} & \sim \text{Normal}(0, 1) \\
+\beta_{Yi} & \sim \text{Normal}(\beta_{Y,i-1}, \sigma_{\beta_Y}) \\
+y_i & \sim \text{Normal}\left(f\left(u_{o = \text{Pa}(i)}, x_i, t_i\right)^T \beta_Y, \sigma_Y^2 I \right) \\
+\end{align}$$
+where $f(\dots; \dots)$ are penalized tensor-product smoothers with B-spline bases as defined above.
+
+Before fitting this, we need to define the order of the spline, or equivalently its degree, and a sequence of knots for every variable. For $X$ we can just use quantiles. For $U$ which is latent we use quantiles of a normal with standard deviation $2$ which should cover the entire domain of the posterior. For $T$ which is the treatment, we want to make counterfactual predictions when we increase the treatment in the next steps. Hence we compute the quantiles on all values of $T$ and th $T + 1$. This is arguably a bit awkward, but we need to make sure to cover the entire domain to have a well defined spline basis.
+We choose a degree of $d=2$, since the pair plots of the data above suggest approximately quadratic relationship (at least since we assume to not know the data generating process).
+
+
+```{python}
+data["degree"] = 2
+data["n_knots"] = 6
+
+quantiles = np.linspace(0.001, 0.999, data["n_knots"])
+u_knots = sp.stats.norm.ppf(loc=0, scale=2, q=quantiles)
+x_knots = np.quantile(X, q=quantiles)
+tr_knots = np.quantile(np.concatenate([tr, tr + 1]), q=quantiles)
+
+data["u_knots"] = onp.asarray(u_knots)
+data["x_knots"] = onp.asarray(x_knots)
+data["tr_knots"] = onp.asarray(tr_knots)
+```
+
+We can now fit the model
+
+```{python}
+tps_model_file = os.path.join(models_folder, "tps_model.stan")
+
+model = CmdStanModel(stan_file=gplinear_model_file)
+fit = sample(model, data)
+```
+
+```{python}
+print(fit.diagnose())
+```
+
+Diagnostics look excellent! The fit is also significantly faster. 
+
+```{python}
+print(fit.summary().head())
+```
+
+Let's also look at some plots
+
+```{python}
+posterior_az = az.from_cmdstanpy(fit)
+
+_, ax = plt.subplots(figsize=(8, 4))
+az.plot_energy(posterior_az, ax=ax, fill_color=["#233B43", "darkgrey"]);
+ax.legend(title="", bbox_to_anchor=(1.2, 0.5))
+plt.show()
+```
+
+```{python}
+_, axes = plt.subplots(ncols=2, nrows=2, figsize=(12, 8))
+az.plot_trace(
+    posterior_az,
+    axes=axes,
+    var_names=["u_scale", "U"],
+    chain_prop={"color": palettes.discrete_qualitative_colors(2)}
+)
+plt.show()
+```
+
+
+```{python}
+ite = fit.draws_pd(vars="ite")
+```
 
 
 
