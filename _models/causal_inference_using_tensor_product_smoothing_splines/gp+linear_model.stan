@@ -1,19 +1,4 @@
-functions {
-    vector[] concat_rr(int N, real[] arr1, real[] arr2) {
-        vector[2] v[N];
-        v[:, 1] = arr1;
-        v[:, 2] = arr2;
-        return v;
-    }
-
-    vector[] concat_vr(int N, vector[] arr1, real[] arr2) {
-        int P1 = size(arr1[1]);
-        vector[P1 + 1] v[N];
-        for (i in 1:P1) v[:, i] = arr1[:, i];
-        v[:, P1 + 1] = arr2;
-        return v;
-    }
-}
+#include functions.stan
 
 data {
     int<lower=0> N_I;

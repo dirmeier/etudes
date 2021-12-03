@@ -27,6 +27,14 @@ The repository hosts some notebooks on probabilistic models, such as Gaussian pr
 - [VI for stick-breaking constructions](https://dirmeier.github.io/etudes/stick_breaking_constructions.html) implements mean-field variational approximations for nonparametric mixture and factor models using stick-breaking constructions.
 
 
+## Build
+
+Compile a Jupyter notebook to html via
+
+```
+make file=FILE.ipynb
+```
+
 ## Author
 
 Simon Dirmeier <a href="mailto:simon.dirmeier@web.de">simon.dirmeier @ web.de</a>
