@@ -25,11 +25,22 @@ The repository hosts some notebooks on probabilistic models, such as Gaussian pr
 - [Variational LSTMs](https://dirmeier.github.io/etudes/variational_lstms.html) implements a variational multivariate LSTM for timeseries prediction of an US election data set.
 - [Hilbert-space approximate copula processes](https://dirmeier.github.io/etudes/low_rank_copula_processes.html) explains how a copula process in conjunction with Hilbert-space approximations can be used to model stochastic volatility.
 - [VI for stick-breaking constructions](https://dirmeier.github.io/etudes/stick_breaking_constructions.html) implements mean-field variational approximations for nonparametric mixture and factor models using stick-breaking constructions.
+- [Tensor-product spline smoothers](https://dirmeier.github.io/etudes/causal_inference_using_tensor_product_smoothing_splines.html) implements a probabilistic model for causal inference with structured latent confounders.
 
 
 ## Build
 
-Compile a Jupyter notebook to html via
+Make sure to have Jupyter extensions installed (e.g. `toc2`) and add this under the `metadata`:
+
+```
+"toc": {
+ "number_sections": false,
+ "sideBar": true,
+ "skip_h1": true
+}
+```
+
+Compile the Jupyter notebook to html via
 
 ```
 make file=FILE.ipynb
