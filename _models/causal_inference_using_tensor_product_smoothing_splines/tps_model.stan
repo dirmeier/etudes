@@ -39,13 +39,11 @@ parameters {
   real x_beta;
   real<lower=0> x_scale;
 
-  real<lower=0> t_beta_tau;
   vector[n_coefs * n_coefs] t_beta;
   real<lower=0> t_scale;
-
-  real<lower=0> y_beta_tau;
+  
   vector[n_coefs * n_coefs * n_coefs] y_beta;
-  real<lower=0>  y_scale;
+  real<lower=0> y_scale;
 }
 
 
@@ -71,17 +69,15 @@ model {
   x_beta ~ std_normal();
   x_scale ~ std_normal();
 
-  t_beta_tau ~ std_normal();
   t_beta[1] ~ std_normal();
   for (i in 2:size(t_beta)) {
-     t_beta[i] ~ normal(t_beta[i - 1], t_beta_tau);
+    t_beta[i] ~ normal(t_beta[i - 1], 1);
   }
   t_scale ~ std_normal();
 
-  y_beta_tau ~ std_normal();
   y_beta[1] ~ std_normal();
   for (i in 2:size(y_beta)) {
-     y_beta[i] ~ normal(y_beta[i - 1], y_beta_tau);
+    y_beta[i] ~ normal(y_beta[i - 1], 1);
   }
   y_scale ~ std_normal();
 
@@ -90,10 +86,10 @@ model {
   y   ~ normal(y_design * y_beta, y_scale);
 }
 
-generated quantities {
-  vector[N_I] ite;
+generated quantities {  
+  vector[N_I] y_star;
   {
-      real      tr1[N_I]   = to_array_1d(tr + 1);
+      real      tr1[N_I]   = to_array_1d(tr);
       real      ur[N_I]    = to_array_1d(U[i_to_o]);
       vector[2] uxr[N_I]   = concat_rr(N_I, ur, xr);
       vector[3] uxtr1[N_I] = concat_vr(N_I, uxr, tr1);
@@ -103,9 +99,9 @@ generated quantities {
       );
 
       vector[N_I] y_star_mu  = y_star_design * y_beta;
-
-      for (i in 1:N_I)
-          ite[i] = normal_rng(y_star_mu[i] - y[i], y_scale);
+      for (i in 1:N_I) {
+          y_star[i] = normal_rng(y_star_mu[i], y_scale);
+     }
   }
 }
 

@@ -13114,7 +13114,7 @@ $( document ).ready(function(){
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>While catching up on new literature on causal inference, I discovered a paper for inference of potential outcomes when
-observations are confounded in a hierarchical way, i.e., when a latent confounding variable is shared among several observations <cite>(Witty et al., 2020)</cite>. The paper uses Gaussian processes (GPs) to elegantly model the functional relationships between data and latent variables and, following <cite>(D'Amour, 2019)</cite>, shows that the estimator of the individual treatment effect (ITE) is consistent. Even though consistency of an estimator is a desirable property, for finite data variables of interest are often only weakly identifiable when working with complex nonparametric models (at least in my experience) and the utility of otherwise elegant models for principled statistical data analysis is limited. Unfortunately, the paper neither provides any code to redo the analysis nor shows sampler diagnostics or nor visualizations of posterior distributions.</p>
+observations are confounded in a hierarchical way, i.e., when a latent confounding variable is shared among several observations <span>(Witty <i>et al.</i>, (2020))</span>. The paper uses Gaussian processes (GPs) to elegantly model the functional relationships between data and latent variables and, following <span>D'Amour, (2019)</span>, shows that the estimator of the individual treatment effect (ITE) is consistent. Even though consistency of an estimator is a desirable property, for finite data variables of interest are often only weakly identifiable when working with complex nonparametric models (at least in my experience) and the utility of otherwise elegant models for principled statistical data analysis is limited. Unfortunately, the paper neither provides any code to redo the analysis nor shows sampler diagnostics or nor visualizations of posterior distributions.</p>
 <p>Hence, in this case study, we will first re-implement the proposed model, examine its MCMC diagnostics, and finally propose a model that is both significantly faster to fit and produces easier posterior geometries to sample from. We implement the models in <a href="https://github.com/stan-dev/stan">Stan</a>.</p>
 <p><strong>Feedback and comments are welcome!</strong></p>
 <p>We load some libraries for inference and working with data first.</p>
@@ -13122,7 +13122,7 @@ observations are confounded in a hierarchical way, i.e., when a latent confoundi
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div class="cell border-box-sizing code_cell rendered celltag_hide">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
@@ -13160,7 +13160,6 @@ observations are confounded in a hierarchical way, i.e., when a latent confoundi
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">onp</span>
 
 <span class="kn">import</span> <span class="nn">jax</span>
-<span class="kn">from</span> <span class="nn">jax</span> <span class="kn">import</span> <span class="n">jit</span>
 <span class="kn">import</span> <span class="nn">jax.numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">jax.scipy</span> <span class="k">as</span> <span class="nn">sp</span>
 <span class="kn">import</span> <span class="nn">jax.random</span> <span class="k">as</span> <span class="nn">random</span>
@@ -13188,7 +13187,7 @@ observations are confounded in a hierarchical way, i.e., when a latent confoundi
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Hierarchical-confounding">Hierarchical confounding<a class="anchor-link" href="#Hierarchical-confounding">&#182;</a></h1><p><span>Witty <i>et al.</i> (2020)</span> assume a structural equations model of the following form</p>
+<h2 id="Hierarchical-confounding">Hierarchical confounding<a class="anchor-link" href="#Hierarchical-confounding">&#182;</a></h2><p><span>Witty <i>et al.</i> (2020)</span> assume a structural equations model of the following form</p>
 $$\begin{align}
 u_o &amp; \leftarrow \epsilon_{u_o} \\
 x_i &amp; \leftarrow f_X\left(u_{o = \text{Pa}(i)},  \epsilon_{x_i} \right) \\
@@ -13196,7 +13195,7 @@ t_i &amp; \leftarrow f_{T}\left(u_{o = \text{Pa}(i)}, x_i, \epsilon_{t_i} \right
 y_i &amp; \leftarrow f_{Y}\left(u_{o = \text{Pa}(i)}, x_i, t_i, \epsilon_{y_i} \right) \\
 \end{align}$$<p>where $o =1, \dots, N_O$ indexes the number of latent confounders $U_o$, $i = 1, \dots, N_I$ indexes covariables
 $X_i$, treatments $T_i$ and outcomes $Y_i$ all of which we assume to be univariate for simplicity, but w.l.o.g can also be multivariate.</p>
-<p>Before we define the model from @witty2020causal, we generate some data to define the problem we are dealing with. We first define the sample sizes, number of latent confounders, dimensionality of $X$ and $U$ and noise variances:</p>
+<p>Before we define the model from <span>Witty <i>et al.</i>, 2020</span>, we generate some data to define the problem we are dealing with. We first define the sample sizes, number of latent confounders, dimensionality of $X$ and $U$ and noise variances:</p>
 
 </div>
 </div>
@@ -13321,9 +13320,9 @@ $X_i$, treatments $T_i$ and outcomes $Y_i$ all of which we assume to be univaria
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">gy</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">i_to_o</span><span class="p">):</span>
     <span class="n">ts</span> <span class="o">=</span> <span class="n">t</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
-    <span class="n">xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">us</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">i_to_o</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">i_to_o</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">ts</span> <span class="o">+</span> <span class="n">xs</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">us</span>
+    <span class="n">xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">us</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">i_to_o</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span>  <span class="mi">2</span> <span class="o">*</span> <span class="n">ts</span> <span class="o">-</span> <span class="n">xs</span> <span class="o">+</span> <span class="n">us</span>
   
 <span class="n">rng_key</span><span class="p">,</span> <span class="n">sample_key</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng_key</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="n">y_eps</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span>
@@ -13434,15 +13433,12 @@ $X_i$, treatments $T_i$ and outcomes $Y_i$ all of which we assume to be univaria
 <div class="prompt input_prompt">In&nbsp;[12]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">iter_warmup</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">iter_sampling</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nd">@timer</span>
+<span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
-        <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> 
-        <span class="n">iter_warmup</span><span class="o">=</span><span class="n">iter_warmup</span><span class="p">,</span>
-        <span class="n">iter_sampling</span><span class="o">=</span><span class="n">iter_sampling</span><span class="p">,</span>
-        <span class="n">chains</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> 
-        <span class="n">parallel_chains</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
+        <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="mi">23</span>
+        <span class="n">seed</span><span class="o">=</span><span class="mi">1</span>
     <span class="p">)</span>
 </pre></div>
 
@@ -13467,6 +13463,19 @@ $X_i$, treatments $T_i$ and outcomes $Y_i$ all of which we assume to be univaria
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="n">model_file</span><span class="p">):</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">CmdStanModel</span><span class="p">(</span><span class="n">stan_file</span><span class="o">=</span><span class="n">model_file</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">models_folder</span> <span class="o">=</span> <span class="s2">&quot;_models/causal_inference_using_tensor_product_smoothing_splines&quot;</span>
 </pre></div>
 
     </div>
@@ -13502,19 +13511,48 @@ The regression of $X$ on $U$ is a Gaussian process latent variable model which i
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="prompt input_prompt">In&nbsp;[15]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">models_folder</span> <span class="o">=</span> <span class="s2">&quot;_models/causal_inference_using_tensor_product_smoothing_splines&quot;</span>
-<span class="n">gp_model_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">gp_model_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
     <span class="n">models_folder</span><span class="p">,</span> <span class="s2">&quot;gp_model.stan&quot;</span>
 <span class="p">)</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">gp_model_file</span><span class="p">)</span>
-<span class="n">fit</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 </pre></div>
 
     </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[16]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fit</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Elapsed time: 8747.586176457999
+</pre>
+</div>
+</div>
+
 </div>
 </div>
 
@@ -13529,7 +13567,7 @@ The regression of $X$ on $U$ is a Gaussian process latent variable model which i
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[15]:</div>
+<div class="prompt input_prompt">In&nbsp;[17]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">fit</span><span class="o">.</span><span class="n">diagnose</span><span class="p">())</span>
@@ -13549,25 +13587,27 @@ The regression of $X$ on $U$ is a Gaussian process latent variable model which i
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>Processing csv files: /tmp/tmpq_zgkqfl/gp_model-202112032156-1-ehi3i9j_.csv, /tmp/tmpq_zgkqfl/gp_model-202112032156-2-e9gexj_x.csv
+<pre>Processing csv files: /tmp/tmp3rutg0nt/gp_model-202112041404-1-0asktw6j.csv, /tmp/tmp3rutg0nt/gp_model-202112041404-2-ppql05xd.csv, /tmp/tmp3rutg0nt/gp_model-202112041404-3-a1jfhcz8.csv, /tmp/tmp3rutg0nt/gp_model-202112041404-4-vod4ux73.csv
 
 Checking sampler transitions treedepth.
 Treedepth satisfactory for all transitions.
 
 Checking sampler transitions for divergences.
-3 of 40 (7.5%) transitions ended with a divergence.
+1 of 4000 (0.025%) transitions ended with a divergence.
 These divergent transitions indicate that HMC is not fully able to explore the posterior distribution.
 Try increasing adapt delta closer to 1.
 If this doesn&#39;t remove all divergences, try to reparameterize the model.
 
 Checking E-BFMI - sampler transitions HMC potential energy.
-The E-BFMI, 0.16, is below the nominal threshold of 0.3 which suggests that HMC may have trouble exploring the target distribution.
+The E-BFMI, 0.14, is below the nominal threshold of 0.3 which suggests that HMC may have trouble exploring the target distribution.
 If possible, try to reparameterize the model.
 
-Effective sample size satisfactory.
+The following parameters had fewer than 0.001 effective draws per transition:
+  U_tilde[1], U_tilde[2], U_tilde[3], U_tilde[4], U_tilde[5], U_tilde[6], U_tilde[7], U_tilde[8], U_tilde[9], U_tilde[10], U_tilde[11], U_tilde[12], U_tilde[13], U_tilde[14], U_tilde[15], U_tilde[16], U_tilde[17], U_tilde[18], U_tilde[19], U_tilde[20], cov_t_rhos[1], U[1], U[2], U[3], U[4], U[5], U[6], U[7], U[8], U[9], U[10], U[11], U[12], U[13], U[14], U[15], U[16], U[17], U[18], U[19], U[20]
+Such low values indicate that the effective sample size estimators may be biased high and actual performance may be substantially lower than quoted.
 
 The following parameters had split R-hat greater than 1.1:
-  u_scale, U_tilde[1], U_tilde[2], U_tilde[3], U_tilde[4], U_tilde[5], U_tilde[6], U_tilde[7], U_tilde[8], U_tilde[9], U_tilde[10], U_tilde[11], U_tilde[12], U_tilde[13], U_tilde[14], U_tilde[15], U_tilde[16], U_tilde[17], U_tilde[18], U_tilde[19], U_tilde[20], cov_x_rho, x_scale, cov_t_rhos[1], cov_t_rhos[2], cov_t_scale, cov_y_rhos[1], cov_y_rhos[2], cov_y_rhos[3], cov_y_scale, y_scale, U[1], U[2], U[3], U[4], U[5], U[6], U[7], U[8], U[9], U[10], U[11], U[12], U[13], U[14], U[15], U[16], U[17], U[18], U[19], U[20]
+  u_scale, U_tilde[1], U_tilde[2], U_tilde[3], U_tilde[4], U_tilde[5], U_tilde[6], U_tilde[7], U_tilde[8], U_tilde[9], U_tilde[10], U_tilde[11], U_tilde[12], U_tilde[13], U_tilde[14], U_tilde[15], U_tilde[16], U_tilde[17], U_tilde[18], U_tilde[19], U_tilde[20], cov_x_rho, cov_t_rhos[1], cov_t_scale, cov_y_rhos[1], U[1], U[2], U[3], U[4], U[5], U[6], U[7], U[8], U[9], U[10], U[11], U[12], U[13], U[14], U[15], U[16], U[17], U[18], U[19], U[20]
 Such high values indicate incomplete mixing and biased estimation.
 You should consider regularizating your model with additional prior information or a more effective parameterization.
 
@@ -13590,7 +13630,7 @@ Processing complete.
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[16]:</div>
+<div class="prompt input_prompt">In&nbsp;[18]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">posterior_az</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">from_cmdstanpy</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span>
@@ -13621,7 +13661,7 @@ Processing complete.
 
 
 <div class="output_png output_subarea ">
-<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_27_0.png"
+<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_29_0.png"
 >
 </div>
 
@@ -13633,7 +13673,7 @@ Processing complete.
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[17]:</div>
+<div class="prompt input_prompt">In&nbsp;[19]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
@@ -13662,7 +13702,7 @@ Processing complete.
 
 
 <div class="output_png output_subarea ">
-<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_28_0.png"
+<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_30_0.png"
 >
 </div>
 
@@ -13708,7 +13748,7 @@ y &amp; \sim \text{GP}\left(0, K_Y\left(\left[u_{o = \text{Pa}(i)}, x_i, t_i \ri
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[18]:</div>
+<div class="prompt input_prompt">In&nbsp;[20]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">gplinear_model_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
@@ -13716,10 +13756,40 @@ y &amp; \sim \text{GP}\left(0, K_Y\left(\left[u_{o = \text{Pa}(i)}, x_i, t_i \ri
 <span class="p">)</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">gplinear_model_file</span><span class="p">)</span>
-<span class="n">fit</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 </pre></div>
 
     </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[21]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fit</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Elapsed time: 5187.069955089002
+</pre>
+</div>
+</div>
+
 </div>
 </div>
 
@@ -13734,7 +13804,7 @@ y &amp; \sim \text{GP}\left(0, K_Y\left(\left[u_{o = \text{Pa}(i)}, x_i, t_i \ri
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[19]:</div>
+<div class="prompt input_prompt">In&nbsp;[22]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">fit</span><span class="o">.</span><span class="n">diagnose</span><span class="p">())</span>
@@ -13754,24 +13824,24 @@ y &amp; \sim \text{GP}\left(0, K_Y\left(\left[u_{o = \text{Pa}(i)}, x_i, t_i \ri
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>Processing csv files: /tmp/tmpq_zgkqfl/gp+linear_model-202112032157-1-_p6ya3x3.csv, /tmp/tmpq_zgkqfl/gp+linear_model-202112032157-2-2jcu2i9y.csv
+<pre>Processing csv files: /tmp/tmp3rutg0nt/gp+linear_model-202112041630-1-u8uaqssp.csv, /tmp/tmp3rutg0nt/gp+linear_model-202112041630-2-8ziftc5y.csv, /tmp/tmp3rutg0nt/gp+linear_model-202112041630-3-o6ouipui.csv, /tmp/tmp3rutg0nt/gp+linear_model-202112041630-4-eyvq05ax.csv
 
 Checking sampler transitions treedepth.
 Treedepth satisfactory for all transitions.
 
 Checking sampler transitions for divergences.
-7 of 40 (18%) transitions ended with a divergence.
-These divergent transitions indicate that HMC is not fully able to explore the posterior distribution.
-Try increasing adapt delta closer to 1.
-If this doesn&#39;t remove all divergences, try to reparameterize the model.
+No divergent transitions found.
 
 Checking E-BFMI - sampler transitions HMC potential energy.
-E-BFMI satisfactory.
+The E-BFMI, 0.0179971, is below the nominal threshold of 0.3 which suggests that HMC may have trouble exploring the target distribution.
+If possible, try to reparameterize the model.
 
-Effective sample size satisfactory.
+The following parameters had fewer than 0.001 effective draws per transition:
+  u_scale, U_tilde[1], U_tilde[2], U_tilde[3], U_tilde[4], U_tilde[5], U_tilde[6], U_tilde[7], U_tilde[8], U_tilde[9], U_tilde[10], U_tilde[11], U_tilde[12], U_tilde[13], U_tilde[14], U_tilde[15], U_tilde[16], U_tilde[17], U_tilde[18], U_tilde[19], U_tilde[20], x_beta, x_scale, cov_t_rhos[1], cov_y_rhos[1], U[1], U[2], U[3], U[4], U[5], U[6], U[7], U[8], U[9], U[10], U[11], U[12], U[13], U[14], U[15], U[16], U[17], U[18], U[19], U[20]
+Such low values indicate that the effective sample size estimators may be biased high and actual performance may be substantially lower than quoted.
 
-The following parameters had split R-hat greater than 1.1:
-  u_scale, U_tilde[1], U_tilde[2], U_tilde[3], U_tilde[4], U_tilde[5], U_tilde[6], U_tilde[7], U_tilde[8], U_tilde[9], U_tilde[10], U_tilde[11], U_tilde[12], U_tilde[13], U_tilde[14], U_tilde[15], U_tilde[16], U_tilde[17], U_tilde[18], U_tilde[19], U_tilde[20], x_beta, x_scale, cov_t_rhos[1], cov_t_rhos[2], t_scale, cov_y_rhos[1], cov_y_rhos[2], cov_y_rhos[3], y_scale, U[1], U[2], U[3], U[4], U[5], U[6], U[7], U[8], U[9], U[10], U[11], U[12], U[14], U[15], U[16], U[17], U[18], U[19], U[20]
+The following parameters had split R-hat greater than 1.05:
+  u_scale, U_tilde[1], U_tilde[2], U_tilde[3], U_tilde[4], U_tilde[5], U_tilde[6], U_tilde[7], U_tilde[8], U_tilde[9], U_tilde[10], U_tilde[11], U_tilde[12], U_tilde[13], U_tilde[14], U_tilde[15], U_tilde[16], U_tilde[17], U_tilde[18], U_tilde[19], U_tilde[20], x_beta, x_scale, cov_t_rhos[1], cov_t_rhos[2], cov_t_scale, t_scale, cov_y_rhos[1], cov_y_scale, U[1], U[2], U[3], U[4], U[5], U[6], U[7], U[8], U[9], U[10], U[11], U[12], U[13], U[14], U[15], U[16], U[17], U[18], U[19], U[20]
 Such high values indicate incomplete mixing and biased estimation.
 You should consider regularizating your model with additional prior information or a more effective parameterization.
 
@@ -13786,7 +13856,7 @@ Processing complete.
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[20]:</div>
+<div class="prompt input_prompt">In&nbsp;[23]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">posterior_az</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">from_cmdstanpy</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span>
@@ -13813,7 +13883,7 @@ Processing complete.
 
 
 <div class="output_png output_subarea ">
-<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_35_0.png"
+<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_38_0.png"
 >
 </div>
 
@@ -13834,7 +13904,7 @@ Processing complete.
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="A-tensor-product-spline-model">A tensor-product spline model<a class="anchor-link" href="#A-tensor-product-spline-model">&#182;</a></h1><p>Both models seem to be too hard to sample from to make work in practice and draw statistically reliable conclusions for decision making. As a final approach we simplify the model one more time and replace all functional GP relationships with smoothing splines. Since the regressions $f: U, X \rightarrow T$ and $f: U, X, T \rightarrow Y$ use vectorial inputs, we will use a tensor-product smoothing spline [@wood2006low] based on B-spline bases.</p>
+<h2 id="A-tensor-product-spline-model">A tensor-product spline model<a class="anchor-link" href="#A-tensor-product-spline-model">&#182;</a></h2><p>Both models seem to be too hard to sample from to make work in practice and draw statistically reliable conclusions for decision making. As a final approach we simplify the model one more time and replace all functional GP relationships with smoothing splines. Since the regressions $f: U, X \rightarrow T$ and $f: U, X, T \rightarrow Y$ use vectorial inputs, we will use a tensor-product smoothing spline <span>(Wood (2006))</span> based on B-spline bases.</p>
 <p>A spline with of order $m + 1$ with $K$ parameters can be represented as a linear combination of B-spline bases as</p>
 $$\begin{equation}
 f(x) = \sum_i^K \alpha_i B_{i, m}(x)
@@ -13848,15 +13918,15 @@ B_{i, 1}(x) = \begin{cases}
 $$\begin{equation}
 B_{i, m}(x)_ = \frac{x - k_i}{k_{i + m + 1} - k_i} B_{i, m - 1}(x) + \frac{k_{i + m + 2} - x}{k_{i + m + 2} - k_{i + 1}} B_{i + 1, m - 1}(x)
 \end{equation}$$<p>To define a B-spline basis with $K$ parameters and order $m + 1$ we will need to define a $K + m + 2$-dimensional vector of knots $k$ (which in practice can be a bit annoying). 
-As Milad Kharratzadeh notes in his <a href="https://mc-stan.org/users/documentation/case-studies/splines_in_stan.html">spline case study</a>, we should define an extended knot sequence to cover the whole span of the knots, but for this case-study we follow the description in @wood2017generalized to avoid confusion.</p>
+As Milad Kharratzadeh notes in his <a href="https://mc-stan.org/users/documentation/case-studies/splines_in_stan.html">spline case study</a>, we should define an extended knot sequence to cover the whole span of the knots, but for this case-study we follow the description in <span>Wood (2017)</span> to avoid confusion.</p>
 <p>To build a B-spline basis in Stan we consequently need to implement this recursive definition. Since this definition only handles univariate inputs, we will use a tensor-product basis over multiple variables. 
-Following @wood2006low, the constructions of a tensor-product basis starts by constructing low-rank bases $B^V$ for every variable $V$. We then define a tensor-product spline over a set of variables as</p>
+Following <span>Wood (2006)</span>, the constructions of a tensor-product basis starts by constructing low-rank bases $B^V$ for every variable $V$. We then define a tensor-product spline over a set of variables as</p>
 $$\begin{equation}
 f(x, y; \alpha) = \sum_k^K \sum_l^L \alpha_{kl} B^X_{k,m} B^Y_{l,m}
 \end{equation}$$<p>We can extend this construction further for a third variable</p>
 $$\begin{equation}
 f(x, y, z; \alpha) = \sum_k^K \sum_l^L \sum_j^J \alpha_{klj} B^X_{k,m} B^Y_{l,m}  B^Z_{j,m}
-\end{equation}$$<p>This construction is all we need to define a smooth functions over the three variables. For our model, we will use B-spline bases which are not necessarily low-rank. However, by regularize adjacent pairs of coefficients $\alpha$ to control the wiggliness of the basis function (see @wood2017generalized who explains this way better).</p>
+\end{equation}$$<p>This construction is all we need to define a smooth functions over the three variables. For our model, we will use B-spline bases which are not necessarily low-rank. However, by regularize adjacent pairs of coefficients $\alpha$ to control the wiggliness of the basis function (see <span>Wood (2017)</span> who explains this way better).</p>
 
 </div>
 </div>
@@ -13869,9 +13939,9 @@ f(x, y, z; \alpha) = \sum_k^K \sum_l^L \sum_j^J \alpha_{klj} B^X_{k,m} B^Y_{l,m}
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div class="cell border-box-sizing code_cell rendered celltag_hide">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[21]:</div>
+<div class="prompt input_prompt">In&nbsp;[24]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">tn</span> <span class="o">=</span> <span class="mi">100</span>
@@ -13921,7 +13991,7 @@ f(x, y, z; \alpha) = \sum_k^K \sum_l^L \sum_j^J \alpha_{klj} B^X_{k,m} B^Y_{l,m}
 
 
 <div class="output_png output_subarea ">
-<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_39_0.png"
+<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_42_0.png"
 >
 </div>
 
@@ -13939,9 +14009,9 @@ f(x, y, z; \alpha) = \sum_k^K \sum_l^L \sum_j^J \alpha_{klj} B^X_{k,m} B^Y_{l,m}
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
+<div class="cell border-box-sizing code_cell rendered celltag_hide">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[22]:</div>
+<div class="prompt input_prompt">In&nbsp;[25]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">tn</span> <span class="o">=</span> <span class="mi">100</span>
@@ -13994,7 +14064,7 @@ f(x, y, z; \alpha) = \sum_k^K \sum_l^L \sum_j^J \alpha_{klj} B^X_{k,m} B^Y_{l,m}
 
 
 <div class="output_png output_subarea ">
-<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_41_0.png"
+<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_44_0.png"
 >
 </div>
 
@@ -14035,22 +14105,22 @@ y_i &amp; \sim \text{Normal}\left(f\left(u_{o = \text{Pa}(i)}, x_i, t_i\right)^T
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>where $f(\dots; \dots)$ are penalized tensor-product smoothers with B-spline bases as defined above.</p>
-<p>Before fitting this, we need to define the order of the spline, or equivalently its degree, and a sequence of knots for every variable. For $X$ we can just use quantiles. For $U$ which is latent we use quantiles of a normal with standard deviation $2$ which should cover the entire domain of the posterior. For $T$ which is the treatment, we want to make counterfactual predictions when we increase the treatment in the next steps. Hence we compute the quantiles on all values of $T$ and th $T + 1$. This is arguably a bit awkward, but we need to make sure to cover the entire domain to have a well defined spline basis.
-We choose a degree of $d=2$, since the pair plots of the data above suggest approximately quadratic relationship (at least since we assume to not know the data generating process).</p>
+<p>Before fitting this, we need to define the order of the spline, or equivalently its degree, and a sequence of knots for every variable. For $X$ we can just use quantiles. For $U$ which is latent we use quantiles of a normal with standard deviation $1$ which should cover the domain of the highest density region of the posterior. For $T$ which is the treatment, since we possibly want to make counterfactual predictions, we should define knots on that region.  Hence we compute the quantiles on all values of $T$ and th $T + 1$ (this is kinda arbitrary for this example). This is arguably a bit awkward, but we need to make sure to cover the entire domain to have a well defined spline basis.</p>
+<p>We choose a degree of $d=2$, since the pair plots of the data above suggest approximately quadratic relationships (at least since we pretend to not know the data generating process).</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[23]:</div>
+<div class="prompt input_prompt">In&nbsp;[26]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;degree&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
 <span class="n">data</span><span class="p">[</span><span class="s2">&quot;n_knots&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
 
-<span class="n">quantiles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;n_knots&quot;</span><span class="p">])</span>
-<span class="n">u_knots</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">quantiles</span><span class="p">)</span>
+<span class="n">quantiles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;n_knots&quot;</span><span class="p">])</span>
+<span class="n">u_knots</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">quantiles</span><span class="p">)</span>
 <span class="n">x_knots</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">quantiles</span><span class="p">)</span>
 <span class="n">tr_knots</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">tr</span><span class="p">,</span> <span class="n">tr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">q</span><span class="o">=</span><span class="n">quantiles</span><span class="p">)</span>
 
@@ -14074,16 +14144,45 @@ We choose a degree of $d=2$, since the pair plots of the data above suggest appr
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[24]:</div>
+<div class="prompt input_prompt">In&nbsp;[27]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">tps_model_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">models_folder</span><span class="p">,</span> <span class="s2">&quot;tps_model.stan&quot;</span><span class="p">)</span>
-
 <span class="n">model</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">tps_model_file</span><span class="p">)</span>
-<span class="n">fit</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 </pre></div>
 
     </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[28]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fit</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Elapsed time: 159.703083614997
+</pre>
+</div>
+</div>
+
 </div>
 </div>
 
@@ -14098,7 +14197,7 @@ We choose a degree of $d=2$, since the pair plots of the data above suggest appr
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[25]:</div>
+<div class="prompt input_prompt">In&nbsp;[29]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">fit</span><span class="o">.</span><span class="n">diagnose</span><span class="p">())</span>
@@ -14118,7 +14217,7 @@ We choose a degree of $d=2$, since the pair plots of the data above suggest appr
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>Processing csv files: /tmp/tmpq_zgkqfl/tps_model-202112032157-1-_qqbs6zd.csv, /tmp/tmpq_zgkqfl/tps_model-202112032157-2-eojkauke.csv
+<pre>Processing csv files: /tmp/tmp3rutg0nt/tps_model-202112041757-1-mv1gi5sn.csv, /tmp/tmp3rutg0nt/tps_model-202112041757-2-7pwhed9v.csv, /tmp/tmp3rutg0nt/tps_model-202112041757-3-jz9xoas1.csv, /tmp/tmp3rutg0nt/tps_model-202112041757-4-4voqfx8b.csv
 
 Checking sampler transitions treedepth.
 Treedepth satisfactory for all transitions.
@@ -14127,17 +14226,13 @@ Checking sampler transitions for divergences.
 No divergent transitions found.
 
 Checking E-BFMI - sampler transitions HMC potential energy.
-The E-BFMI, 0.190768, is below the nominal threshold of 0.3 which suggests that HMC may have trouble exploring the target distribution.
-If possible, try to reparameterize the model.
+E-BFMI satisfactory.
 
 Effective sample size satisfactory.
 
-The following parameters had split R-hat greater than 1.05:
-  u_scale, U_tilde[2], U_tilde[4], U_tilde[6], U_tilde[8], U_tilde[9], U_tilde[15], U_tilde[17], x_scale, t_beta[1], t_beta[2], t_beta[4], y_beta_tau, y_beta[8], y_beta[10], y_beta[18], y_beta[19], y_beta[20], y_beta[21], y_beta[22], y_beta[23], y_beta[24], y_beta[25], y_beta[26], y_beta[27], U[2], U[3], U[6], U[8], U[9], U[10], U[13], U[16], U[17], U[20], ite[1], ite[2], ite[3], ite[4], ite[5], ite[6], ite[7], ite[8], ite[9], ite[10], ite[11], ite[12], ite[13], ite[14], ite[15], ite[16], ite[17], ite[18], ite[19], ite[20], ite[21], ite[22], ite[24], ite[25], ite[28], ite[31], ite[32], ite[33], ite[34], ite[35], ite[36], ite[37], ite[38], ite[39], ite[40], ite[41], ite[42], ite[43], ite[44], ite[45], ite[46], ite[47], ite[48], ite[49], ite[50], ite[51], ite[52], ite[53], ite[54], ite[55], ite[57], ite[58], ite[60], ite[61], ite[63], ite[64], ite[65], ite[66], ite[67], ite[68], ite[69], ite[70], ite[71], ite[72], ite[73], ite[74], ite[75], ite[76], ite[77], ite[81], ite[82], ite[83], ite[84], ite[85], ite[87], ite[88], ite[89], ite[90], ite[91], ite[92], ite[93], ite[94], ite[95], ite[96], ite[97], ite[99], ite[100], ite[101], ite[102], ite[103], ite[104], ite[106], ite[107], ite[108], ite[109], ite[110], ite[111], ite[113], ite[114], ite[115], ite[116], ite[117], ite[118], ite[119], ite[120], ite[121], ite[122], ite[123], ite[124], ite[125], ite[126], ite[127], ite[128], ite[129], ite[130], ite[131], ite[132], ite[133], ite[134], ite[135], ite[136], ite[137], ite[138], ite[139], ite[140], ite[141], ite[142], ite[143], ite[144], ite[145], ite[146], ite[147], ite[148], ite[149], ite[150], ite[151], ite[152], ite[153], ite[154], ite[155], ite[156], ite[157], ite[158], ite[159], ite[160], ite[161], ite[162], ite[163], ite[164], ite[165], ite[167], ite[168], ite[169], ite[170], ite[171], ite[172], ite[173], ite[174], ite[175], ite[176], ite[177], ite[178], ite[179], ite[180], ite[181], ite[182], ite[183], ite[184], ite[185], ite[186], ite[187], ite[188], ite[189], ite[190], ite[191], ite[192], ite[193], ite[194], ite[195], ite[196], ite[197], ite[198], ite[199], ite[200]
-Such high values indicate incomplete mixing and biased estimation.
-You should consider regularizating your model with additional prior information or a more effective parameterization.
+Split R-hat values satisfactory all parameters.
 
-Processing complete.
+Processing complete, no problems detected.
 </pre>
 </div>
 </div>
@@ -14156,7 +14251,7 @@ Processing complete.
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[26]:</div>
+<div class="prompt input_prompt">In&nbsp;[30]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">fit</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
@@ -14172,7 +14267,7 @@ Processing complete.
 
 <div class="output_area">
 
-    <div class="prompt output_prompt">Out[26]:</div>
+    <div class="prompt output_prompt">Out[30]:</div>
 
 
 
@@ -14221,63 +14316,63 @@ Processing complete.
   <tbody>
     <tr>
       <th>lp__</th>
-      <td>190.000</td>
-      <td>9.300</td>
-      <td>30.00</td>
-      <td>100.00000</td>
-      <td>200.00</td>
-      <td>220.000</td>
-      <td>11.0</td>
-      <td>1.30</td>
-      <td>1.20</td>
+      <td>350.000</td>
+      <td>0.1900</td>
+      <td>6.500</td>
+      <td>340.00</td>
+      <td>350.000</td>
+      <td>360.00</td>
+      <td>1100.0</td>
+      <td>4.2</td>
+      <td>1.0</td>
     </tr>
     <tr>
       <th>u_scale</th>
-      <td>0.310</td>
-      <td>0.044</td>
-      <td>0.13</td>
-      <td>0.00012</td>
-      <td>0.33</td>
-      <td>0.480</td>
-      <td>8.3</td>
-      <td>1.00</td>
-      <td>1.20</td>
+      <td>0.330</td>
+      <td>0.0018</td>
+      <td>0.061</td>
+      <td>0.24</td>
+      <td>0.320</td>
+      <td>0.44</td>
+      <td>1100.0</td>
+      <td>4.1</td>
+      <td>1.0</td>
     </tr>
     <tr>
       <th>U_tilde[1]</th>
-      <td>-0.071</td>
-      <td>0.047</td>
-      <td>0.35</td>
-      <td>-0.60000</td>
-      <td>-0.08</td>
-      <td>0.620</td>
-      <td>54.0</td>
-      <td>6.60</td>
-      <td>0.97</td>
+      <td>-0.120</td>
+      <td>0.0033</td>
+      <td>0.260</td>
+      <td>-0.54</td>
+      <td>-0.110</td>
+      <td>0.30</td>
+      <td>5961.0</td>
+      <td>22.0</td>
+      <td>1.0</td>
     </tr>
     <tr>
       <th>U_tilde[2]</th>
-      <td>-0.230</td>
-      <td>0.170</td>
-      <td>0.60</td>
-      <td>-0.79000</td>
-      <td>-0.35</td>
-      <td>0.650</td>
-      <td>13.0</td>
-      <td>1.60</td>
-      <td>1.10</td>
+      <td>-0.350</td>
+      <td>0.0040</td>
+      <td>0.260</td>
+      <td>-0.77</td>
+      <td>-0.350</td>
+      <td>0.07</td>
+      <td>4255.0</td>
+      <td>16.0</td>
+      <td>1.0</td>
     </tr>
     <tr>
       <th>U_tilde[3]</th>
-      <td>-1.500</td>
-      <td>0.140</td>
-      <td>0.68</td>
-      <td>-2.60000</td>
-      <td>-1.60</td>
-      <td>-0.032</td>
-      <td>22.0</td>
-      <td>2.70</td>
-      <td>1.00</td>
+      <td>-1.600</td>
+      <td>0.0082</td>
+      <td>0.390</td>
+      <td>-2.30</td>
+      <td>-1.600</td>
+      <td>-1.00</td>
+      <td>2236.0</td>
+      <td>8.2</td>
+      <td>1.0</td>
     </tr>
     <tr>
       <th>...</th>
@@ -14292,68 +14387,68 @@ Processing complete.
       <td>...</td>
     </tr>
     <tr>
-      <th>ite[196]</th>
-      <td>3.300</td>
-      <td>2.400</td>
-      <td>3.10</td>
-      <td>-0.72000</td>
-      <td>2.70</td>
-      <td>8.700</td>
-      <td>1.6</td>
-      <td>0.20</td>
-      <td>1.80</td>
-    </tr>
-    <tr>
-      <th>ite[197]</th>
-      <td>4.300</td>
-      <td>2.900</td>
-      <td>3.40</td>
-      <td>-0.57000</td>
-      <td>4.20</td>
-      <td>8.900</td>
-      <td>1.4</td>
-      <td>0.17</td>
-      <td>2.30</td>
-    </tr>
-    <tr>
-      <th>ite[198]</th>
-      <td>4.300</td>
-      <td>2.500</td>
-      <td>3.30</td>
-      <td>-0.98000</td>
-      <td>4.60</td>
-      <td>8.300</td>
-      <td>1.8</td>
-      <td>0.22</td>
-      <td>1.60</td>
-    </tr>
-    <tr>
-      <th>ite[199]</th>
-      <td>-0.360</td>
-      <td>0.570</td>
-      <td>0.99</td>
-      <td>-1.90000</td>
-      <td>-0.31</td>
-      <td>1.300</td>
-      <td>3.0</td>
-      <td>0.37</td>
-      <td>1.20</td>
-    </tr>
-    <tr>
-      <th>ite[200]</th>
-      <td>-0.810</td>
-      <td>0.240</td>
-      <td>0.84</td>
-      <td>-2.50000</td>
-      <td>-0.77</td>
-      <td>0.310</td>
-      <td>12.0</td>
-      <td>1.50</td>
+      <th>y_star[196]</th>
+      <td>0.400</td>
+      <td>0.0068</td>
+      <td>0.420</td>
+      <td>-0.27</td>
+      <td>0.400</td>
       <td>1.10</td>
+      <td>3839.0</td>
+      <td>14.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>y_star[197]</th>
+      <td>-0.035</td>
+      <td>0.0066</td>
+      <td>0.410</td>
+      <td>-0.70</td>
+      <td>-0.034</td>
+      <td>0.63</td>
+      <td>3862.0</td>
+      <td>14.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>y_star[198]</th>
+      <td>-0.018</td>
+      <td>0.0064</td>
+      <td>0.400</td>
+      <td>-0.69</td>
+      <td>-0.017</td>
+      <td>0.65</td>
+      <td>3915.0</td>
+      <td>14.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>y_star[199]</th>
+      <td>0.100</td>
+      <td>0.0062</td>
+      <td>0.400</td>
+      <td>-0.56</td>
+      <td>0.100</td>
+      <td>0.74</td>
+      <td>4118.0</td>
+      <td>15.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>y_star[200]</th>
+      <td>0.140</td>
+      <td>0.0065</td>
+      <td>0.400</td>
+      <td>-0.53</td>
+      <td>0.130</td>
+      <td>0.79</td>
+      <td>3823.0</td>
+      <td>14.0</td>
+      <td>1.0</td>
     </tr>
   </tbody>
 </table>
-<p>284 rows × 9 columns</p>
+<p>282 rows × 9 columns</p>
 </div>
 </div>
 
@@ -14373,10 +14468,10 @@ Processing complete.
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[27]:</div>
+<div class="prompt input_prompt">In&nbsp;[31]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">posterior_az</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">from_cmdstanpy</span><span class="p">(</span><span class="n">fit</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">posterior_az</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">from_cmdstanpy</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">posterior_predictive</span><span class="o">=</span><span class="s2">&quot;y_star&quot;</span><span class="p">,</span> <span class="n">observed_data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">y</span><span class="p">})</span>
 
 <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 <span class="n">_</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">plot_energy</span><span class="p">(</span>
@@ -14404,7 +14499,7 @@ Processing complete.
 
 
 <div class="output_png output_subarea ">
-<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_53_0.png"
+<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_57_0.png"
 >
 </div>
 
@@ -14416,7 +14511,7 @@ Processing complete.
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[28]:</div>
+<div class="prompt input_prompt">In&nbsp;[32]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
@@ -14445,7 +14540,7 @@ Processing complete.
 
 
 <div class="output_png output_subarea ">
-<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_54_0.png"
+<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_58_0.png"
 >
 </div>
 
@@ -14458,33 +14553,30 @@ Processing complete.
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>With Stan we can generate simulations from the posterior predictive. Below, we simulated predictive ITE values using the posterior samples as defined in the paper.</p>
+<p>With Stan we can easily generate simulations from the posterior predictive $Y^*$ using the <code>generated quantities</code> block (see the Stan file below).</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[29]:</div>
+<div class="prompt input_prompt">In&nbsp;[33]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ite</span> <span class="o">=</span> <span class="n">gy</span><span class="p">(</span><span class="n">tr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">i_to_o</span><span class="p">)</span> <span class="o">-</span> <span class="n">y</span>
-
-<span class="n">ite_star</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">draws_pd</span><span class="p">(</span><span class="nb">vars</span><span class="o">=</span><span class="s2">&quot;ite&quot;</span><span class="p">)</span>
-<span class="n">ite_star</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span>
-  <span class="n">ite_star</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-  <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> 
-  <span class="n">q</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">,</span> <span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">])</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">az</span><span class="o">.</span><span class="n">plot_ppc</span><span class="p">(</span>
+    <span class="n">posterior_az</span><span class="p">,</span>
+    <span class="n">data_pairs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="s2">&quot;y_star&quot;</span><span class="p">},</span>
+    <span class="n">colors</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">palettes</span><span class="o">.</span><span class="n">discrete_qualitative_colors</span><span class="p">(</span><span class="mi">6</span><span class="p">)[</span><span class="mi">3</span><span class="p">],</span>
+        <span class="s2">&quot;black&quot;</span><span class="p">,</span>
+        <span class="n">palettes</span><span class="o">.</span><span class="n">discrete_qualitative_colors</span><span class="p">(</span><span class="mi">6</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="p">],</span>
+    <span class="n">num_pp_samples</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span>
+    
 <span class="p">)</span>
-
-<span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
-<span class="n">_</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">histplot</span><span class="p">(</span><span class="n">ite</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#233B43&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;density&quot;</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ite_star</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-    <span class="n">_</span> <span class="o">=</span> <span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span>
-        <span class="n">ite_star</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:],</span>
-        <span class="n">color</span><span class="o">=</span><span class="n">palettes</span><span class="o">.</span><span class="n">discrete_qualitative_colors</span><span class="p">(</span><span class="mi">3</span><span class="p">)[</span><span class="mi">2</span><span class="p">],</span>
-        <span class="n">ax</span><span class="o">=</span><span class="n">ax</span>
-    <span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 
@@ -14504,7 +14596,7 @@ Processing complete.
 
 
 <div class="output_png output_subarea ">
-<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_56_0.png"
+<img src="causal_inference_using_tensor_product_smoothing_splines_files/causal_inference_using_tensor_product_smoothing_splines_60_0.png"
 >
 </div>
 
@@ -14513,6 +14605,15 @@ Processing complete.
 </div>
 </div>
 
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Discussion">Discussion<a class="anchor-link" href="#Discussion">&#182;</a></h2><p>In this case study we implemented a nonparametric probabilistic model for causal inference with structured latent confounders. We started out with the model by <span>Witty <i>et al.</i> (2020)</span>, identified via MCMC diagnostics that the induced posterior geometry seems to be too challenging to allow efficient sampling and consequently adapted the model using tensor-product spline. We showed that the new model produces accurate posterior predictive distributions. The Markov chains of our new model not only mix faster but also higher effective sample sizes per second.</p>
+<p>Our new model is not as "automatic" as the GP model, since we (semi-)subjectively needed to decide on knot positions, the spline degree, etc (while we for the GP model "only" needed to decide which covariance function to use (which in ML research seems always be the exponentiated-quadratic kernel)). In my opinion, however, principled statistical analysis rarely can be fully automized, especially so for causal reasoning in scientific settings, but that significant prior reasearch, domain knowledge, and model criticism are required to draw meaningful (inferential) conclusions from data.</p>
+
+</div>
+</div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
@@ -14532,7 +14633,7 @@ Processing complete.
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[30]:</div>
+<div class="prompt input_prompt">In&nbsp;[34]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">session_info</span>
@@ -14574,7 +14675,7 @@ notebook            6.4.6
 Python 3.8.12 | packaged by conda-forge | (default, Oct 12 2021, 21:57:06) [GCC 9.4.0]
 Linux-5.11.0-41-generic-x86_64-with-glibc2.10
 -----
-Session information updated at 2021-12-03 21:57
+Session information updated at 2021-12-04 17:59
 </pre>
 </div>
 </div>
@@ -14592,7 +14693,7 @@ Session information updated at 2021-12-03 21:57
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[31]:</div>
+<div class="prompt input_prompt">In&nbsp;[35]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">models_folder</span><span class="p">,</span> <span class="s2">&quot;functions.stan&quot;</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
@@ -14733,7 +14834,7 @@ Session information updated at 2021-12-03 21:57
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[32]:</div>
+<div class="prompt input_prompt">In&nbsp;[36]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">tps_model_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
@@ -14794,13 +14895,11 @@ parameters {
   real x_beta;
   real&lt;lower=0&gt; x_scale;
 
-  real&lt;lower=0&gt; t_beta_tau;
   vector[n_coefs * n_coefs] t_beta;
   real&lt;lower=0&gt; t_scale;
-
-  real&lt;lower=0&gt; y_beta_tau;
+  
   vector[n_coefs * n_coefs * n_coefs] y_beta;
-  real&lt;lower=0&gt;  y_scale;
+  real&lt;lower=0&gt; y_scale;
 }
 
 
@@ -14826,17 +14925,15 @@ model {
   x_beta ~ std_normal();
   x_scale ~ std_normal();
 
-  t_beta_tau ~ std_normal();
   t_beta[1] ~ std_normal();
   for (i in 2:size(t_beta)) {
-     t_beta[i] ~ normal(t_beta[i - 1], t_beta_tau);
+    t_beta[i] ~ normal(t_beta[i - 1], 1);
   }
   t_scale ~ std_normal();
 
-  y_beta_tau ~ std_normal();
   y_beta[1] ~ std_normal();
   for (i in 2:size(y_beta)) {
-     y_beta[i] ~ normal(y_beta[i - 1], y_beta_tau);
+    y_beta[i] ~ normal(y_beta[i - 1], 1);
   }
   y_scale ~ std_normal();
 
@@ -14845,10 +14942,10 @@ model {
   y   ~ normal(y_design * y_beta, y_scale);
 }
 
-generated quantities {
-  vector[N_I] ite;
+generated quantities {  
+  vector[N_I] y_star;
   {
-      real      tr1[N_I]   = to_array_1d(tr + 1);
+      real      tr1[N_I]   = to_array_1d(tr);
       real      ur[N_I]    = to_array_1d(U[i_to_o]);
       vector[2] uxr[N_I]   = concat_rr(N_I, ur, xr);
       vector[3] uxtr1[N_I] = concat_vr(N_I, uxr, tr1);
@@ -14858,9 +14955,9 @@ generated quantities {
       );
 
       vector[N_I] y_star_mu  = y_star_design * y_beta;
-
-      for (i in 1:N_I)
-          ite[i] = normal_rng(y_star_mu[i] - y[i], y_scale);
+      for (i in 1:N_I) {
+          y_star[i] = normal_rng(y_star_mu[i], y_scale);
+     }
   }
 }
 
@@ -14877,7 +14974,7 @@ generated quantities {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="References">References<a class="anchor-link" href="#References">&#182;</a></h1><p>D’Amour, Alexander. 2019. “On Multi-Cause Causal Inference with Unobserved Confounding: Counterexamples, Impossibility, and Alternatives.” arXiv Preprint arXiv:1902.10286.</p>
+<h2 id="References">References<a class="anchor-link" href="#References">&#182;</a></h2><p>D’Amour, Alexander. 2019. “On Multi-Cause Causal Inference with Unobserved Confounding: Counterexamples, Impossibility, and Alternatives.” arXiv Preprint arXiv:1902.10286.</p>
 <p>Witty, Sam, Kenta Takatsu, David Jensen, and Vikash Mansinghka. 2020. “Causal Inference Using Gaussian Processes with Structured Latent Confounders.” In International Conference on Machine Learning, 10313–23. PMLR.</p>
 <p>Wood, Simon N. 2006. “Low-Rank Scale-Invariant Tensor Product Smooths for Generalized Additive Mixed Models.” Biometrics 62 (4): 1025–36.</p>
 <p>Wood, Simon N. 2017. Generalized Additive Models: An Introduction with R. CRC press.</p>
