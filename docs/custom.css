@@ -1,1 +1,111 @@
-../css/custom.css
+@import url('https://fonts.googleapis.com/css?family=Merriweather|Inconsolata|EB+Garamond');
+
+
+body{
+  font-family:  "Merriweather", serif;
+  font-size: 14px;
+  color: #333333;
+  line-height: 1.6 !important;
+  text-align: justify;
+}
+
+p {
+  color: #333333  !important;
+  font-size: 14px  !important;
+  line-height: 1.6 !important;
+}
+
+h1, h2, h3 {
+  font-style: italic !important;
+  font-weight: 300 !important;
+  margin-bottom: 2rem  !important;
+  margin-top: 2rem  !important;
+  color: #333333  !important;
+}
+
+
+h1 {
+  font-size: 3rem !important;
+
+}
+
+
+h2 {
+  font-size: 2rem;
+}
+
+
+h3 {
+  font-size: 1.8rem;
+}
+
+
+h4 {
+  font-style: italic;
+  color: #333333;
+  font-family: "Merriweather", serif;
+  font-size: 15px;
+}
+
+h4.date {
+  margin-bottom: 3%;
+}
+
+
+code, pre {
+  font-size: 1.4rem;
+}
+
+.title {
+   color: #333333;
+   font-family: 'Merriweather';
+   margin-bottom: 3%;
+   margin-top: 6%;
+}
+
+
+.level2, .level1, .level3 {
+  margin-top: 5%
+}
+
+
+.tocify {
+  padding-top: 25px;
+  border-radius: 0px;
+  border: 0px;
+  overflow: auto;
+  font-style: italic;
+}
+
+
+.tocify::-webkit-scrollbar {
+  display: none;
+}
+
+
+.list-group-item.active, .list-group-item.active:hover, .list-group-item.active:focus {
+  background-color: white;
+  border-color: #f5f5f5;
+  margin-bottom: 6px;
+  margin-top: 6px;
+  color: #1F407A;
+  font-size: 1.15em;
+}
+
+
+.blue, a, a:hover {
+  color: #1F407A;
+}
+
+a {
+  text-decoration: underline;
+}
+
+toc a {
+  font-size: 3rem !important;
+  color: #333333  !important;
+}
+
+.highlight_on_scroll {
+    border-left: solid 3px #1F407A !important;
+}

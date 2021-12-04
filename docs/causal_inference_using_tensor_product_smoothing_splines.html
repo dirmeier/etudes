@@ -2,7 +2,7 @@
 <html>
 <head><meta charset="utf-8" />
 
-<title>causal_inference_using_tensor_product_smoothing_splines</title>
+<title>Tensor splines</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
@@ -9129,15 +9129,15 @@ label {
 }
 /* Flexible box model classes */
 /* Taken from Alex Russell http://infrequently.org/2009/08/css-3-progress/ */
-/* This file is a compatability layer.  It allows the usage of flexible box 
+/* This file is a compatability layer.  It allows the usage of flexible box
 model layouts accross multiple browsers, including older browsers.  The newest,
 universal implementation of the flexible box model is used when available (see
-`Modern browsers` comments below).  Browsers that are known to implement this 
+`Modern browsers` comments below).  Browsers that are known to implement this
 new spec completely include:
 
     Firefox 28.0+
     Chrome 29.0+
-    Internet Explorer 11+ 
+    Internet Explorer 11+
     Opera 17.0+
 
 Browsers not listed, including Safari, are supported via the styling under the
@@ -12519,7 +12519,7 @@ div#pager .ui-resizable-handle {
   background: #f7f7f7;
   border-top: 1px solid #cfcfcf;
   border-bottom: 1px solid #cfcfcf;
-  /* This injects handle bars (a short, wide = symbol) for 
+  /* This injects handle bars (a short, wide = symbol) for
         the resize handle. */
 }
 div#pager .ui-resizable-handle::after {
@@ -13038,14 +13038,14 @@ div#notebook {
   div.cell {
     display: block;
     page-break-inside: avoid;
-  } 
-  div.output_wrapper { 
-    display: block;
-    page-break-inside: avoid; 
   }
-  div.output { 
+  div.output_wrapper {
     display: block;
-    page-break-inside: avoid; 
+    page-break-inside: avoid;
+  }
+  div.output {
+    display: block;
+    page-break-inside: avoid;
   }
 }
 </style>
@@ -13104,7 +13104,7 @@ $( document ).ready(function(){
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Causal-inference-using-tensor-product-smoothing-splines-with-structured-latent-confounders"><em>Causal inference using tensor-product smoothing splines with structured latent confounders</em><a class="anchor-link" href="#Causal-inference-using-tensor-product-smoothing-splines-with-structured-latent-confounders">&#182;</a></h1>
+<h1 id="Causal-inference-using-tensor-product-smoothing-splines-with-structured-latent-confounders"><em>Causal inference using tensor-product smoothing splines<br>with structured latent confounders</em><a class="anchor-link" href="#Causal-inference-using-tensor-product-smoothing-splines-with-structured-latent-confounders">&#182;</a></h1>
 </div>
 </div>
 </div>
@@ -13135,11 +13135,11 @@ observations are confounded in a hierarchical way, i.e., when a latent confoundi
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">warnings</span> 
+<span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 
 <span class="k">def</span> <span class="nf">timer</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
-    <span class="kn">from</span> <span class="nn">timeit</span> <span class="kn">import</span> <span class="n">default_timer</span>    
+    <span class="kn">from</span> <span class="nn">timeit</span> <span class="kn">import</span> <span class="n">default_timer</span>
     <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">start</span> <span class="o">=</span> <span class="n">default_timer</span><span class="p">()</span>
         <span class="n">res</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -13147,8 +13147,8 @@ observations are confounded in a hierarchical way, i.e., when a latent confoundi
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Elapsed time: </span><span class="si">{</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">res</span>
     <span class="k">return</span> <span class="n">f</span>
-  
-<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>  
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
 <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
 </pre></div>
 
@@ -13179,8 +13179,8 @@ observations are confounded in a hierarchical way, i.e., when a latent confoundi
 <span class="kn">import</span> <span class="nn">palettes</span>
 
 <span class="n">sns</span><span class="o">.</span><span class="n">set_style</span><span class="p">(</span>
-    <span class="s2">&quot;ticks&quot;</span><span class="p">,</span> 
-    <span class="p">{</span><span class="s1">&#39;font.family&#39;</span><span class="p">:</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span> 
+    <span class="s2">&quot;ticks&quot;</span><span class="p">,</span>
+    <span class="p">{</span><span class="s1">&#39;font.family&#39;</span><span class="p">:</span><span class="s1">&#39;serif&#39;</span><span class="p">,</span>
      <span class="s1">&#39;font.serif&#39;</span><span class="p">:</span><span class="s1">&#39;Times New Roman&#39;</span><span class="p">}</span>
 <span class="p">)</span>
 <span class="n">palettes</span><span class="o">.</span><span class="n">set_theme</span><span class="p">()</span>
@@ -13265,7 +13265,7 @@ $X_i$, treatments $T_i$ and outcomes $Y_i$ all of which we assume to be univaria
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">rng_key</span><span class="p">,</span> <span class="n">sample_key</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng_key</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="n">U</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span>
-    <span class="n">sample_key</span><span class="p">,</span> 
+    <span class="n">sample_key</span><span class="p">,</span>
     <span class="n">mean</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">P_U</span><span class="p">),</span>
     <span class="n">cov</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">P_U</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma_u</span><span class="p">,</span>
     <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">N_O</span><span class="p">,)</span>
@@ -13284,10 +13284,10 @@ $X_i$, treatments $T_i$ and outcomes $Y_i$ all of which we assume to be univaria
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">rng_key</span><span class="p">,</span> <span class="n">sample_key</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng_key</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="n">X_eps</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span>
-    <span class="n">sample_key</span><span class="p">,</span> 
+    <span class="n">sample_key</span><span class="p">,</span>
     <span class="n">mean</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">P_X</span><span class="p">),</span>
     <span class="n">cov</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">P_X</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma_x</span><span class="p">,</span>
-    <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">N_I</span><span class="p">,)</span>    
+    <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">N_I</span><span class="p">,)</span>
 <span class="p">)</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">U</span><span class="p">[</span><span class="n">i_to_o</span><span class="p">]</span> <span class="o">+</span> <span class="n">X_eps</span>
 </pre></div>
@@ -13306,10 +13306,10 @@ $X_i$, treatments $T_i$ and outcomes $Y_i$ all of which we assume to be univaria
     <span class="n">xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">us</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">i_to_o</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">i_to_o</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">xs</span> <span class="o">-</span> <span class="n">us</span>
-  
+
 <span class="n">rng_key</span><span class="p">,</span> <span class="n">sample_key</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng_key</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="n">tr_eps</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span>
-    <span class="n">sample_key</span><span class="p">,</span> 
+    <span class="n">sample_key</span><span class="p">,</span>
     <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">N_I</span><span class="p">,)</span>
 <span class="p">)</span> <span class="o">*</span> <span class="n">sigma_tr</span>
 <span class="n">tr</span> <span class="o">=</span> <span class="n">gt</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">i_to_o</span><span class="p">)</span> <span class="o">+</span> <span class="n">tr_eps</span>
@@ -13330,10 +13330,10 @@ $X_i$, treatments $T_i$ and outcomes $Y_i$ all of which we assume to be univaria
     <span class="n">xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">us</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">i_to_o</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">return</span>  <span class="mi">2</span> <span class="o">*</span> <span class="n">ts</span> <span class="o">-</span> <span class="n">xs</span> <span class="o">+</span> <span class="n">us</span>
-  
+
 <span class="n">rng_key</span><span class="p">,</span> <span class="n">sample_key</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">rng_key</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="n">y_eps</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span>
-    <span class="n">sample_key</span><span class="p">,</span> 
+    <span class="n">sample_key</span><span class="p">,</span>
     <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">N_I</span><span class="p">,)</span>
 <span class="p">)</span> <span class="o">*</span> <span class="n">sigma_y</span>
 <span class="n">y</span> <span class="o">=</span> <span class="n">gy</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">i_to_o</span><span class="p">)</span> <span class="o">+</span> <span class="n">y_eps</span>
@@ -13502,7 +13502,7 @@ x &amp; \sim \text{GP}\left(0, K_X\left(u_{o = \text{Pa}(i)}, u_{o = \text{Pa}(i
 t &amp; \sim \text{GP}\left(0, K_T\left(\left[u_{o = \text{Pa}(i)}, x_i \right], \left[u_{o = \text{Pa}(i)}, x_i \right]\right) + \sigma_T^2 I \right) \\
 y &amp; \sim \text{GP}\left(0, K_Y\left(\left[u_{o = \text{Pa}(i)}, x_i, t_i \right], \left[u_{o = \text{Pa}(i)}, x_i, t_i \right]\right) + \sigma_Y^2 I \right) \\
 \end{align}<p>where the notation $[a, b]$ concatenates the row-vectors $a$ and $b$ along the same axis and every covariance function $K_k$ is an exponentiated-quadratic covariance function with automatic relevance determination, i.e., for every dimension of a feature vector a separate length-scale is introduced. For instance, $K_X\left(u_{o = \text{Pa}(i)}, u_{o = \text{Pa}(i)}\right)$ for univariate $u$ and $i$ uses three hyperparamters.</p>
-<p>On first view, this model seems difficult to fit with common probabilistic languages and Hamiltonian Monte Carlo. 
+<p>On first view, this model seems difficult to fit with common probabilistic languages and Hamiltonian Monte Carlo.
 The regression of $X$ on $U$ is a Gaussian process latent variable model which is in itself is not trivial to work with, even though to help identify the kernel parameters of $K_X$ statistical strength can be borrowed from the regressions of $T$ and $Y$ onto $U$. In addition, the posterior geometry looks to be challenging to explore due to the high number of positively-constrained parameters and the somewhat awkward covariance structure of $K_X\left(u_{o = \text{Pa}(i)}, u_{o = \text{Pa}(i)}\right)$. Lastly, for low sample sizes both $u$ and the kernel hyperparameters might be only weakly identified (if at all) which for interpretation of the results is undesirable.</p>
 
 </div>
@@ -13645,7 +13645,7 @@ Processing complete.
 <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 <span class="n">_</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">plot_energy</span><span class="p">(</span>
     <span class="n">posterior_az</span><span class="p">,</span>
-    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> 
+    <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
     <span class="n">fill_color</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;#233B43&quot;</span><span class="p">,</span> <span class="s2">&quot;darkgrey&quot;</span><span class="p">]</span>
 <span class="p">);</span>
 <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
@@ -13924,9 +13924,9 @@ B_{i, 1}(x) = \begin{cases}
 \end{equation}$$<p>and</p>
 $$\begin{equation}
 B_{i, m}(x)_ = \frac{x - k_i}{k_{i + m + 1} - k_i} B_{i, m - 1}(x) + \frac{k_{i + m + 2} - x}{k_{i + m + 2} - k_{i + 1}} B_{i + 1, m - 1}(x)
-\end{equation}$$<p>To define a B-spline basis with $K$ parameters and order $m + 1$ we will need to define a $K + m + 2$-dimensional vector of knots $k$ (which in practice can be a bit annoying). 
+\end{equation}$$<p>To define a B-spline basis with $K$ parameters and order $m + 1$ we will need to define a $K + m + 2$-dimensional vector of knots $k$ (which in practice can be a bit annoying).
 As Milad Kharratzadeh notes in his <a href="https://mc-stan.org/users/documentation/case-studies/splines_in_stan.html">spline case study</a>, we should define an extended knot sequence to cover the whole span of the knots, but for this case-study we follow the description in <span>Wood (2017)</span> to avoid confusion.</p>
-<p>To build a B-spline basis in Stan we consequently need to implement this recursive definition. Since this definition only handles univariate inputs, we will use a tensor-product basis over multiple variables. 
+<p>To build a B-spline basis in Stan we consequently need to implement this recursive definition. Since this definition only handles univariate inputs, we will use a tensor-product basis over multiple variables.
 Following <span>Wood (2006)</span>, the constructions of a tensor-product basis starts by constructing low-rank bases $B^V$ for every variable $V$. We then define a tensor-product spline over a set of variables as</p>
 $$\begin{equation}
 f(x, y; \alpha) = \sum_k^K \sum_l^L \alpha_{kl} B^X_{k,m} B^Y_{l,m}
@@ -13976,7 +13976,7 @@ f(x, y, z; \alpha) = \sum_k^K \sum_l^L \sum_j^J \alpha_{klj} B^X_{k,m} B^Y_{l,m}
 <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">tx</span><span class="p">,</span> <span class="n">ty</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">)</span>
 <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
     <span class="n">tx</span><span class="p">,</span>
-    <span class="n">ty_star</span><span class="p">,</span> 
+    <span class="n">ty_star</span><span class="p">,</span>
     <span class="n">color</span><span class="o">=</span><span class="n">palettes</span><span class="o">.</span><span class="n">discrete_qualitative_colors</span><span class="p">(</span><span class="mi">4</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
 <span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -14049,7 +14049,7 @@ f(x, y, z; \alpha) = \sum_k^K \sum_l^L \sum_j^J \alpha_{klj} B^X_{k,m} B^Y_{l,m}
     <span class="n">_</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">tx</span><span class="p">,</span> <span class="n">ty</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">)</span>
     <span class="n">_</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
         <span class="n">tx</span><span class="p">,</span>
-        <span class="n">ty_star</span><span class="p">,</span> 
+        <span class="n">ty_star</span><span class="p">,</span>
         <span class="n">color</span><span class="o">=</span><span class="n">palettes</span><span class="o">.</span><span class="n">discrete_qualitative_colors</span><span class="p">(</span><span class="mi">4</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
     <span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -14482,7 +14482,7 @@ Processing complete, no problems detected.
 
 <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 <span class="n">_</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">plot_energy</span><span class="p">(</span>
-    <span class="n">posterior_az</span><span class="p">,</span> 
+    <span class="n">posterior_az</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
     <span class="n">fill_color</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;#233B43&quot;</span><span class="p">,</span> <span class="s2">&quot;darkgrey&quot;</span><span class="p">]</span>
 <span class="p">);</span>
@@ -14581,7 +14581,7 @@ Processing complete, no problems detected.
     <span class="p">],</span>
     <span class="n">num_pp_samples</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="n">ax</span>
-    
+
 <span class="p">)</span>
 <span class="n">_</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -14904,7 +14904,7 @@ parameters {
 
   vector[n_coefs * n_coefs] t_beta;
   real&lt;lower=0&gt; t_scale;
-  
+
   vector[n_coefs * n_coefs * n_coefs] y_beta;
   real&lt;lower=0&gt; y_scale;
 }
@@ -14949,7 +14949,7 @@ model {
   y   ~ normal(y_design * y_beta, y_scale);
 }
 
-generated quantities {  
+generated quantities {
   vector[N_I] y_star;
   {
       real      tr1[N_I]   = to_array_1d(tr);
@@ -14993,7 +14993,7 @@ generated quantities {
   </div>
 </body>
 
- 
+
 
 
 </html>
