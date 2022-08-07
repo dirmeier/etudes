@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.0.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Simon Dirmeier">
+
+<title>Diffusion models</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+
+<script src="diffusion_models_files/libs/clipboard/clipboard.min.js"></script>
+<script src="diffusion_models_files/libs/quarto-html/quarto.js"></script>
+<script src="diffusion_models_files/libs/quarto-html/popper.min.js"></script>
+<script src="diffusion_models_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="diffusion_models_files/libs/quarto-html/anchor.min.js"></script>
+<link href="diffusion_models_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="diffusion_models_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="diffusion_models_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="diffusion_models_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="diffusion_models_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc">
+   
+  <ul>
+  <li><a href="#diffusion-models" id="toc-diffusion-models" class="nav-link active" data-scroll-target="#diffusion-models">Diffusion models</a></li>
+  <li><a href="#implementation" id="toc-implementation" class="nav-link" data-scroll-target="#implementation">Implementation</a></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  <li><a href="#elbo" id="toc-elbo" class="nav-link" data-scroll-target="#elbo">ELBO</a></li>
+  <li><a href="#a-better-objective" id="toc-a-better-objective" class="nav-link" data-scroll-target="#a-better-objective">A better objective</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#session-info" id="toc-session-info" class="nav-link" data-scroll-target="#session-info">Session info</a></li>
+  <li><a href="#license" id="toc-license" class="nav-link" data-scroll-target="#license">License</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Diffusion models</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Simon Dirmeier </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">June, 2022</p>
+    </div>
+  </div>
+    
+  </div>
+  
+
+</header>
+
+<p>Diffusion probabilistic models (DPMs), or generative diffusion processes, have attracted significant attention for generative modelling in the last couple of months. Similiarly to normalizing flows, DPMs model data iteratively via a set of transformations. The main idea of DPMs is to first add noise to a data set and then learn a reverse Markovian process that denoises the disrupted data and thus allows generating data from white noise. In this case study, we’ll reimplement the the vanilla model introduced in <span class="citation" data-cites="sohl2015deep">Sohl-Dickstein et al. (<a href="#ref-sohl2015deep" role="doc-biblioref">2015</a>)</span>. To implement the models, we’ll use Jax, Haiku, Distrax and Optax.</p>
+<div class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> numpy <span class="im">as</span> jnp, lax, nn, random</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> optax</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> haiku <span class="im">as</span> hk</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> distrax</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> arviz <span class="im">as</span> az</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> palettes</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>sns.<span class="bu">set</span>(rc<span class="op">=</span>{<span class="st">"figure.figsize"</span>: (<span class="dv">6</span>, <span class="dv">3</span>)}) </span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>sns.set_style(<span class="st">"ticks"</span>, {<span class="st">'font.family'</span>: <span class="st">'serif'</span>, <span class="st">'font.serif'</span>: <span class="st">'Merriweather'</span>})</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>palettes.set_theme()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="diffusion-models" class="level1">
+<h1>Diffusion models</h1>
+<p>We briefly discuss diffusion probabilistic models as introduced in <span class="citation" data-cites="sohl2015deep">Sohl-Dickstein et al. (<a href="#ref-sohl2015deep" role="doc-biblioref">2015</a>)</span>. For details, please refer to the original paper or <span class="citation" data-cites="ho2020denoising">Ho, Jain, and Abbeel (<a href="#ref-ho2020denoising" role="doc-biblioref">2020</a>)</span>. Diffusion models are latent variable models of the form</p>
+<p><span class="math display">\[
+p_\theta \left( \mathbf{y} \right)  = \int p_\theta \left( \mathbf{y}, \mathbf{z}_{1:T} \right) d\mathbf{z}_{1:T}
+\]</span></p>
+<p>The above marginal is obtained by integrating over latent variables <span class="math inline">\(\mathbf{z}_{1:T}\)</span> which have the same dimensionality as the data <span class="math inline">\(\mathbf{y}\)</span>. The joint distribution <span class="math inline">\(p_\theta \left( \mathbf{y}, \mathbf{z}_{1:T} \right)\)</span> is defined via learned Markovian transitions</p>
+<p><span class="math display">\[
+p_\theta \left( \mathbf{y}, \mathbf{z}_{1:T} \right) =  p_\theta(\mathbf{x} \mid \mathbf{z}_1) \prod_{t=2}^T  p_\theta(\mathbf{z}_{t - 1} \mid \mathbf{z}_t)  \; p(\mathbf{z}_T)
+\]</span></p>
+<p>where <span class="math inline">\(p_\theta\)</span> is parameterized via a neural network. In comparison to other latent variable models, however, diffusion models start my assuming a forward process that iteratively corrupts a data set <span class="math inline">\(\mathbf{x} \sim q(\mathbf{y})\)</span> via diffusions</p>
+<p><span class="math display">\[
+q\left(\mathbf{z}_{1:T}, \mathbf{y}\right) = q(\mathbf{y}) q(\mathbf{z}_{1} \mid \mathbf{y}) \prod_{t=2}^T q(\mathbf{z}_{t} \mid \mathbf{z}_{t - 1})
+\]</span></p>
+<p>that have a fixed schedule</p>
+<p><span class="math display">\[
+q(\mathbf{z}_{t} \mid \mathbf{z}_{t - 1}) = \mathcal{N}\left( \sqrt{1 - \beta_i} \mathbf{z}_{t - 1}, \beta_i \mathbf{I}  \right)
+\]</span></p>
+<p>Hence, diffusion probablistic models assume a fixed approximate posterior and learn the generative model <span class="math inline">\(p_\theta\)</span>.</p>
+</section>
+<section id="implementation" class="level1">
+<h1>Implementation</h1>
+<p>Using the equations above, we can implement a DPM ourselves without much coding. With JAX and Haiku, a DPM could be implemented like that:</p>
+<div class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DPM(hk.Module):</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, beta_schedule, reverse_process):</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._reverse_process <span class="op">=</span> reverse_process</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.n_diffusions <span class="op">=</span> <span class="bu">len</span>(beta_schedule)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.beta_schedule <span class="op">=</span> beta_schedule</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, method<span class="op">=</span><span class="st">"reverse_loc_and_log_scale"</span>, <span class="op">**</span>kwargs):</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">getattr</span>(<span class="va">self</span>, method)(<span class="op">**</span>kwargs)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _diffuse(<span class="va">self</span>, z, beta):</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>        e <span class="op">=</span> distrax.Normal(jnp.zeros_like(z), <span class="fl">1.0</span>).sample(seed<span class="op">=</span>hk.next_rng_key())</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        z <span class="op">=</span> jnp.sqrt(<span class="fl">1.0</span> <span class="op">-</span> beta) <span class="op">*</span> z <span class="op">+</span> jnp.sqrt(beta) <span class="op">*</span> e</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> z</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> reverse_loc_and_log_scale(<span class="va">self</span>, y):</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># forward diffusion</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        zs <span class="op">=</span> [y] <span class="op">+</span> [<span class="va">None</span>] <span class="op">*</span> <span class="va">self</span>.n_diffusions</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i, beta <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="va">self</span>.beta_schedule):</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>            zs[i <span class="op">+</span> <span class="dv">1</span>] <span class="op">=</span> <span class="va">self</span>._diffuse(zs[i], beta)</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>        <span class="co"># reverse diffusion</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>        locs, log_scales <span class="op">=</span> [<span class="va">None</span>] <span class="op">*</span> <span class="va">self</span>.n_diffusions, [<span class="va">None</span>] <span class="op">*</span> <span class="va">self</span>.n_diffusions</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i <span class="kw">in</span> np.arange(<span class="va">self</span>.n_diffusions <span class="op">-</span> <span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>):</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>            loc, log_scale <span class="op">=</span> jnp.split(<span class="va">self</span>._reverse_process(zs[i <span class="op">+</span> <span class="dv">1</span>]), <span class="dv">2</span>, axis<span class="op">=-</span><span class="dv">1</span>)</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>            locs[i] <span class="op">=</span> loc</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>            log_scales[i] <span class="op">=</span> log_scale</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> zs, locs, log_scales</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> reverse_diffusion(<span class="va">self</span>, z):</span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> _ <span class="kw">in</span> np.arange(<span class="va">self</span>.n_diffusions):</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>            loc, log_scale <span class="op">=</span> jnp.split(<span class="va">self</span>._reverse_process(z), <span class="dv">2</span>, axis<span class="op">=-</span><span class="dv">1</span>)</span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>            e <span class="op">=</span> distrax.Normal(jnp.zeros_like(z), <span class="fl">1.0</span>).sample(seed<span class="op">=</span>hk.next_rng_key())</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>            z <span class="op">=</span> loc <span class="op">+</span> jnp.exp(log_scale) <span class="op">*</span> e</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> z</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The function <code>reverse_loc_and_log_scale</code> first computes the forward process to sample all latent variables, and then, starting from the <span class="math inline">\(\mathbf{z}_T\)</span>, computes the reverse process, or rather the locations and scales of each Gaussian transition, which are parameterized by a neural network.</p>
+<p>Using Haiku, we construct and initialize a DPM like this:</p>
+<div class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>n_diffusions <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>beta_schedule <span class="op">=</span> jnp.linspace(<span class="fl">10e-4</span>, <span class="fl">0.02</span>, n_diffusions)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _dm(method, <span class="op">**</span>kwargs):</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    reverse_process <span class="op">=</span>  hk.Sequential([</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        hk.Linear(<span class="dv">256</span>), jax.nn.leaky_relu,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        hk.Linear(<span class="dv">256</span>), jax.nn.leaky_relu,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        hk.Linear(<span class="dv">256</span>), jax.nn.leaky_relu,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        hk.Linear(<span class="dv">2</span> <span class="op">*</span> <span class="dv">2</span>),</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> DPM(beta_schedule, reverse_process)(method, <span class="op">**</span>kwargs)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>diffusion <span class="op">=</span> hk.transform(_dm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>In the model above, we are only using 5 diffusions. In practice, we should set this number higher to ensure that the distribution of last latent variable <span class="math inline">\(\mathbf{z}_T\)</span> is approximately standard normal. However, as we will see later, optimizing an objective with <span class="math inline">\(T = 1000\)</span> is extremely inefficient and for demonstration we limit ourselves to only 5 diffusions.</p>
+</section>
+<section id="data" class="level1">
+<h1>Data</h1>
+<p>Let’s test the model on a synthetic data set. We sample data from the frequently found “nine Gaussians” distribution. The data set consists of nine fairly well separated Gaussian distributions which is a fairly difficult data set to learn the density of.</p>
+<div class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>K <span class="op">=</span> <span class="dv">9</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>means <span class="op">=</span> jnp.array([<span class="op">-</span><span class="fl">2.0</span>, <span class="fl">0.0</span>, <span class="fl">2.0</span>])</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>means <span class="op">=</span> jnp.array(jnp.meshgrid(means, means)).T.reshape(<span class="op">-</span><span class="dv">1</span>, <span class="dv">2</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>covs <span class="op">=</span> jnp.tile((<span class="dv">1</span> <span class="op">/</span> <span class="dv">16</span> <span class="op">*</span> jnp.eye(<span class="dv">2</span>)), [K, <span class="dv">1</span>, <span class="dv">1</span>])</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>probs <span class="op">=</span> distrax.Uniform().sample(seed<span class="op">=</span>random.PRNGKey(<span class="dv">23</span>), sample_shape<span class="op">=</span>(K,))</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>probs <span class="op">=</span> probs <span class="op">/</span> jnp.<span class="bu">sum</span>(probs)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> distrax.MixtureSameFamily(</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    distrax.Categorical(probs<span class="op">=</span>probs),</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    distrax.MultivariateNormalFullCovariance(means, covs)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="dv">10000</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> d.sample(seed<span class="op">=</span>random.PRNGKey(<span class="dv">2</span>), sample_shape<span class="op">=</span>(n,))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The sampled data looks like this:</p>
+<div class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.DataFrame(np.asarray(y), columns<span class="op">=</span>[<span class="st">"x"</span>, <span class="st">"y"</span>])</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> sns.kdeplot(</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    data<span class="op">=</span>df, x<span class="op">=</span><span class="st">"x"</span>, y<span class="op">=</span><span class="st">"y"</span>, fill<span class="op">=</span><span class="va">True</span>, cmap<span class="op">=</span><span class="st">"mako_r"</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"$y_0$"</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"$y_1$"</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="diffusion_models_files/figure-html/cell-6-output-1.png" width="523" height="288"></p>
+</div>
+</div>
+<p>Before we train the model, we define some helper functions:</p>
+<div class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> timer(func):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="im">from</span> timeit <span class="im">import</span> default_timer</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> f(<span class="op">*</span>args, <span class="op">**</span>kwargs):</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        start <span class="op">=</span> default_timer()</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        res <span class="op">=</span> func(<span class="op">*</span>args, <span class="op">**</span>kwargs)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        stop <span class="op">=</span> default_timer()</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Elapsed time: </span><span class="sc">{</span>stop <span class="op">-</span> start<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> res</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> f</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _normal_from_beta(z, beta):</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> distrax.Independent(</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        distrax.Normal(</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>            jnp.sqrt(<span class="fl">1.0</span> <span class="op">-</span> beta) <span class="op">*</span> z,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>            jnp.sqrt(beta)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _normal(loc, log_scale):</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> distrax.Independent(</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>        distrax.Normal(</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>            loc,</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>            jnp.exp(log_scale)</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _std_normal(like):</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> distrax.Independent(</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>        distrax.Normal(</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>            jnp.zeros_like(like), jnp.ones_like(like)</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="elbo" class="level1">
+<h1>ELBO</h1>
+<p>Training of diffusion models is performed by optimizing the usual evidence lower bound (ELBO):</p>
+<p><span class="math display">\[\begin{align*}
+\log p_\theta(\mathbf{y}) \ge \text{ELBO}(q) = \mathbb{E}_{q(\mathbf{z}_{1:T})}
+\Bigl[
+&amp; \log p_\theta(\mathbf{y} \mid \mathbf{z}_{1}) \\
+&amp;+ \sum_{i=1}^{T - 1} \log p_\theta(\mathbf{z}_i \mid \mathbf{z}_{i + 1}) - \sum_{i=2}^{T} \log q(\mathbf{z}_i \mid \mathbf{z}_{i - 1})  \\
+&amp; +  \log p_\theta(\mathbf{z}_T) - \log q(\mathbf{z}_1 \mid \mathbf{y})
+\Bigr]
+\end{align*}\]</span></p>
+<p>We first initialize our diffusion model to get a <code>pytree</code> of parameters which we need for training.</p>
+<div class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>params <span class="op">=</span> diffusion.init(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    random.PRNGKey(<span class="dv">2</span>), </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span>y, </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    method<span class="op">=</span><span class="st">"reverse_loc_and_log_scale"</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We optimize the ELBO using Optax. A single gradient step using Optax and the ELBO defined above looks, for instance, like this:</p>
+<div class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>adam <span class="op">=</span> optax.adamw(<span class="fl">0.001</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>opt_state <span class="op">=</span> adam.init(params)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="at">@jax.jit</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> step(params, opt_state, y, rng):</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> loss_fn(params):</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>        zs, locs, log_scales <span class="op">=</span> diffusion.<span class="bu">apply</span>(</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>            params, rng<span class="op">=</span>rng, y<span class="op">=</span>y, method<span class="op">=</span><span class="st">"reverse_loc_and_log_scale"</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <span class="co"># log likelihood p(y | z_1)</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        log_pxz <span class="op">=</span> _normal(locs[<span class="dv">0</span>], log_scales[<span class="dv">0</span>]).log_prob(y)</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        kl <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>        <span class="co"># note that: zs[0] == y</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i <span class="kw">in</span> np.arange(<span class="dv">1</span>, <span class="bu">len</span>(zs)):</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>            <span class="co"># q(z_i | z_{i - 1}) where zs[0] = y</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>            lp_q <span class="op">=</span> _normal_from_beta(zs[i <span class="op">-</span> <span class="dv">1</span>], beta_schedule[i <span class="op">-</span> <span class="dv">1</span>]).log_prob(zs[i])</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>            <span class="co"># p(z_i | z_{i + 1})</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> i <span class="op">!=</span> n_diffusions:</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>                lp_p <span class="op">=</span> _normal(locs[i], log_scales[i]).log_prob(zs[i])</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>            <span class="co"># p(z_T)</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>                lp_p <span class="op">=</span> _std_normal(zs[i]).log_prob(zs[i])</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>            kli <span class="op">=</span> lp_q <span class="op">-</span> lp_p</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>            kl <span class="op">+=</span> kli</span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>        loss <span class="op">=</span> <span class="op">-</span>jnp.<span class="bu">sum</span>(log_pxz <span class="op">-</span> kl)</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> loss</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>    loss, grads <span class="op">=</span> jax.value_and_grad(loss_fn)(params)</span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>    updates, new_opt_state <span class="op">=</span> adam.update(grads, opt_state, params)</span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>    new_params <span class="op">=</span> optax.apply_updates(params, updates)</span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> loss, new_params, new_opt_state</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We use batch sizes of 128 and run the optimizer for 2000 epochs.</p>
+<div class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>prng_seq <span class="op">=</span> hk.PRNGSequence(<span class="dv">42</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>batch_size <span class="op">=</span> <span class="dv">128</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>num_batches <span class="op">=</span> y.shape[<span class="dv">0</span>] <span class="op">//</span> batch_size</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>idxs <span class="op">=</span> jnp.arange(y.shape[<span class="dv">0</span>])</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="at">@timer</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> optim(params, opt_state, n_iter <span class="op">=</span> <span class="dv">2000</span>):    </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    losses <span class="op">=</span> [<span class="dv">0</span>] <span class="op">*</span> n_iter</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n_iter):</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        loss <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(batch_size):</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>            ret_idx <span class="op">=</span> lax.dynamic_slice_in_dim(idxs, j <span class="op">*</span> batch_size, batch_size)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>            batch <span class="op">=</span> lax.index_take(y, (ret_idx,), axes<span class="op">=</span>(<span class="dv">0</span>,))</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>            batch_loss, params, opt_state <span class="op">=</span> step(params, opt_state, batch, <span class="bu">next</span>(prng_seq))</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>            loss <span class="op">+=</span> batch_loss</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>        losses[i] <span class="op">=</span> loss</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> params, losses</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>params, losses <span class="op">=</span> optim(params, opt_state)</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>losses <span class="op">=</span> jnp.asarray(losses)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Elapsed time: 1399.1222562079997</code></pre>
+</div>
+</div>
+<p>This took quite some time even though we only used five diffusion steps. It also demonstrates why this objective is not very efficient to compute and prohibits a larger number of diffusions. Before we derive a more efficient objective, let’s have a look at some plots and if training actually worked.</p>
+<p>Let’s have a look if the ELBO converged:</p>
+<div class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> sns.lineplot(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  data<span class="op">=</span>pd.DataFrame({<span class="st">"y"</span>: np.asarray(losses), <span class="st">"x"</span>: <span class="bu">range</span>(<span class="bu">len</span>(losses))}),</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  y<span class="op">=</span><span class="st">"y"</span>, x<span class="op">=</span><span class="st">"x"</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  color<span class="op">=</span><span class="st">'black'</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>ax.<span class="bu">set</span>(</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  xlabel<span class="op">=</span><span class="st">""</span>, ylabel<span class="op">=</span><span class="st">"-ELBO"</span>,</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  xticks<span class="op">=</span>[], xticklabels<span class="op">=</span>[],</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  yticks<span class="op">=</span>[], yticklabels<span class="op">=</span>[]</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="diffusion_models_files/figure-html/cell-11-output-1.png" width="486" height="249"></p>
+</div>
+</div>
+<p>Having trained the model, we can sample from the diffusion model like this:</p>
+<div class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>prior <span class="op">=</span> distrax.Normal(jnp.zeros(<span class="dv">2</span>), jnp.ones(<span class="dv">2</span>))</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span>  prior.sample(</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    seed<span class="op">=</span>random.PRNGKey(<span class="dv">33</span>),</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    sample_shape<span class="op">=</span>(<span class="dv">5000</span>,)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>y_hat <span class="op">=</span> diffusion.<span class="bu">apply</span>(</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    params, rng<span class="op">=</span>random.PRNGKey(<span class="dv">1</span>), </span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    z<span class="op">=</span>z, method<span class="op">=</span><span class="st">"reverse_diffusion"</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> sns.kdeplot(</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    data<span class="op">=</span>pd.DataFrame(np.asarray(y_hat), columns<span class="op">=</span>[<span class="st">"x"</span>, <span class="st">"y"</span>]),</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span><span class="st">"x"</span>, y<span class="op">=</span><span class="st">"y"</span>, fill<span class="op">=</span><span class="va">True</span>, cmap<span class="op">=</span><span class="st">"mako_r"</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>ax.<span class="bu">set</span>(xlabel<span class="op">=</span><span class="st">"$y_0$"</span>, ylabel<span class="op">=</span><span class="st">"$y_1$"</span>)</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="diffusion_models_files/figure-html/cell-12-output-1.png" width="520" height="288"></p>
+</div>
+</div>
+<p>But for the sake of demonstration, this worked nicely! Visually, the estimated density is somewhat close to the original data set. To improve it, we could, for instance, increase the number of diffusions or use a more suitable network architecture.</p>
+</section>
+<section id="a-better-objective" class="level1">
+<h1>A better objective</h1>
+<p>Given this simple neural network architecture and low sample size, training the objective took inacceptably much time. We can, however, use the following insight to define an objective that is easier to train. Since the forward transitions are all Gaussians, we can analytically integrate out intermediate steps, yielding:</p>
+<p><span class="math display">\[
+q \left(  \mathbf{z}_t \mid \mathbf{y} \right)  =
+\mathcal{N} \left( \sqrt{\bar{\alpha}_t}\mathbf{y}, \left( 1 - \bar{\alpha}_t \right) \mathbf{I} \right)
+\]</span></p>
+<p>Using Bayes rule, we can in addition derive the posterior of this process using:</p>
+<p><span class="math display">\[\begin{align*}
+q \left(  \mathbf{z}_{t - 1} \mid  \mathbf{z}_{t}, \mathbf{y} \right)  &amp; = q \left(  \mathbf{z}_{t - 1} \mid  \mathbf{z}_{t}, \mathbf{y} \right)  =  
+\frac{q \left(  \mathbf{z}_{t} \mid  \mathbf{z}_{t-1} , \mathbf{y} \right) q\left(  \mathbf{z}_{t-1} \mid  \mathbf{y} \right)  }{q \left(  \mathbf{z}_{t} \mid  \mathbf{y} \right) } \\
+&amp;  = \mathcal{N} \left( \tilde{\boldsymbol \mu}_t\left( \mathbf{z}_{t}, \mathbf{y}\right) , \tilde{\beta}_t \mathbf{I} \right)
+\end{align*}\]</span></p>
+<p>where</p>
+<p><span class="math display">\[
+\tilde{\boldsymbol \mu}_t\left( \mathbf{z}_{t}, \mathbf{y}\right) =
+\frac{\sqrt{\bar{\alpha}_{t - 1}} \beta_t }{1 - \bar{\alpha}_{t}} \mathbf{y} +
+\frac{\sqrt{\alpha} \left( 1 - \bar{\alpha}_{t - 1} \right) }{1 - \bar{\alpha}_{t}} \mathbf{z}_t
+\]</span></p>
+<p>and</p>
+<p><span class="math display">\[
+\tilde{\beta}_t = \frac{1 - \bar{\alpha}_{t - 1}}{1 - \bar{\alpha}_{t}} {\beta}_t
+\]</span></p>
+<p>Plugin these derivations into the ELBO gives us the following:</p>
+<p><span class="math display">\[
+\mathbb{E}_{q, t} \biggl[
+\log p_\theta \left(\mathbf{y}, \mathbf{z}_1 \right) -
+\mathbb{KL}\Bigl[ q(\mathbf{z}_{t - 1} \mid \mathbf{z}_{t}, \mathbf{y}), p_\theta(\mathbf{z}_{t - 1} \mid \mathbf{z}_t)  \Bigr] -
+\mathbb{KL}\Bigl[ q(\mathbf{z}_T \mid \mathbf{y}), p_\theta(\mathbf{z}_T)  \Bigr]
+\biggr]
+\]</span></p>
+<p>Instead of sampling all T <span class="math inline">\(\mathbf{z}_i\)</span>s, we can instead only optimze the first and the last part and one summand of the sum over the <span class="math inline">\(t\)</span>s</p>
+<p><span class="math display">\[
+\mathbb{E}_{q, t} \biggl[
+\log p_\theta \left(\mathbf{y}, \mathbf{z}_1 \right) -
+\mathbb{KL}\Bigl[ q(\mathbf{z}_T \mid \mathbf{y}), p_\theta(\mathbf{z}_T)  \Bigr] -
+\mathbb{KL}\Bigl
+[ q(\mathbf{z}_{t - 1} \mid \mathbf{z}_{t}, \mathbf{y}), p_\theta(\mathbf{z}_{t - 1} \mid \mathbf{z}_t)  \Bigr]
+\biggr]
+\]</span></p>
+<p>In addition, if we reparameterize <span class="math inline">\(\mathbf{z}_t\)</span>, we get</p>
+<p><span class="math display">\[
+\mathbb{E}_{q(\mathbf{y}), t \sim \mathcal{U}, p(\boldsymbol \epsilon_t), p(\boldsymbol \epsilon_T)} \biggl[
+\log p_\theta \left(\mathbf{y}, \mathbf{z}_1 \right) -
+\mathbb{KL} \Bigl[ q(\mathbf{z}_{t - 1} \mid \mathbf{z}_{t}, \mathbf{y}), p_\theta(\mathbf{z}_{t - 1} \mid \mathbf{z}_t)  \Bigr] -
+\mathbb{KL} \Bigl[ q(\mathbf{z}_T \mid \mathbf{y}), p_\theta(\mathbf{z}_T)  \Bigr]
+\biggr]
+\]</span></p>
+<p>In order to compute <span class="math inline">\(q \left( \mathbf{z}_t \mid \mathbf{y} \right)\)</span> and <span class="math inline">\(q \left( \mathbf{z}_{t - 1} \mid \mathbf{z}_{t}, \mathbf{y} \right)\)</span> we update our DPM class:</p>
+<div class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DPM(hk.Module):</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, beta_schedule, reverse_process):</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>._reverse_process <span class="op">=</span> reverse_process</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.n_diffusions <span class="op">=</span> <span class="bu">len</span>(beta_schedule)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.beta_schedule <span class="op">=</span> beta_schedule</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, method<span class="op">=</span><span class="st">"reverse_process"</span>, <span class="op">**</span>kwargs):</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">getattr</span>(<span class="va">self</span>, method)(<span class="op">**</span>kwargs)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> reverse_diffusion(<span class="va">self</span>, z):</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> _ <span class="kw">in</span> np.arange(<span class="va">self</span>.n_diffusions):</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>            loc, log_scale <span class="op">=</span> jnp.split(<span class="va">self</span>._reverse_process(z), <span class="dv">2</span>, axis<span class="op">=-</span><span class="dv">1</span>)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>            e <span class="op">=</span> distrax.Normal(jnp.zeros_like(z), <span class="fl">1.0</span>).sample(seed<span class="op">=</span>hk.next_rng_key())</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>            z <span class="op">=</span> loc <span class="op">+</span> jnp.exp(log_scale) <span class="op">*</span> e</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> z</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _alpha_bar(<span class="va">self</span>):</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>        alphas <span class="op">=</span> <span class="fl">1.0</span> <span class="op">-</span> <span class="va">self</span>.beta_schedule</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>        alphas_bar <span class="op">=</span> jnp.cumprod(alphas)</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> alphas_bar</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _beta_tilde(<span class="va">self</span>, t):</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>        alphas_bar <span class="op">=</span> <span class="va">self</span>._alpha_bar()</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> (<span class="fl">1.0</span> <span class="op">-</span> alphas_bar[t <span class="op">-</span> <span class="dv">1</span>]) <span class="op">/</span> (<span class="fl">1.0</span> <span class="op">-</span> alphas_bar[t]) <span class="op">*</span> <span class="va">self</span>.beta_schedule[t]</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> reverse_process(<span class="va">self</span>, z):</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>        loc, log_scale <span class="op">=</span> jnp.split(<span class="va">self</span>._reverse_process(z), <span class="dv">2</span>, axis<span class="op">=-</span><span class="dv">1</span>)</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> distrax.Independent(</span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>            distrax.Normal(loc, jnp.exp(log_scale)), <span class="dv">1</span></span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> forward_process(<span class="va">self</span>, y, t):</span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>        alphas_bar <span class="op">=</span> <span class="va">self</span>._alpha_bar()</span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> distrax.Independent(</span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>            distrax.Normal(</span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a>                jnp.sqrt(alphas_bar[t]) <span class="op">*</span> y,</span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>                jnp.repeat(jnp.sqrt(<span class="fl">1.0</span> <span class="op">-</span> alphas_bar[t]), y.shape[<span class="op">-</span><span class="dv">1</span>])</span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>            ), <span class="dv">1</span></span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> sample_forward_process(<span class="va">self</span>, y, t, epsilon<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a>        alphas_bar <span class="op">=</span> <span class="va">self</span>._alpha_bar()</span>
+<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> epsilon <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a>            z <span class="op">=</span> distrax.MultivariateNormalDiag(</span>
+<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>                jnp.sqrt(alphas_bar[t]) <span class="op">*</span> y,</span>
+<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a>                jnp.repeat(<span class="fl">1.0</span> <span class="op">-</span> alphas_bar[t], y.shape[<span class="op">-</span><span class="dv">1</span>])</span>
+<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a>            ).sample(seed<span class="op">=</span>hk.next_rng_key())</span>
+<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a>            z <span class="op">=</span> jnp.sqrt(alphas_bar[t]) <span class="op">*</span> y <span class="op">+</span> jnp.sqrt(<span class="fl">1.0</span> <span class="op">-</span> alphas_bar[t]) <span class="op">*</span> epsilon</span>
+<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> z</span>
+<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> posterior_forward_process(<span class="va">self</span>, y, zt, t):</span>
+<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a>        alphas <span class="op">=</span> <span class="fl">1.0</span> <span class="op">-</span> <span class="va">self</span>.beta_schedule</span>
+<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a>        alphas_bar <span class="op">=</span> <span class="va">self</span>._alpha_bar()</span>
+<span id="cb13-56"><a href="#cb13-56" aria-hidden="true" tabindex="-1"></a>        beta_tilde <span class="op">=</span> <span class="va">self</span>._beta_tilde(t)</span>
+<span id="cb13-57"><a href="#cb13-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-58"><a href="#cb13-58" aria-hidden="true" tabindex="-1"></a>        lhs <span class="op">=</span> (jnp.sqrt(alphas_bar[t <span class="op">-</span> <span class="dv">1</span>]) <span class="op">*</span> <span class="va">self</span>.beta_schedule[t])</span>
+<span id="cb13-59"><a href="#cb13-59" aria-hidden="true" tabindex="-1"></a>        lhs <span class="op">=</span> lhs <span class="op">/</span> (<span class="fl">1.0</span> <span class="op">-</span> alphas_bar[t]) <span class="op">*</span> y</span>
+<span id="cb13-60"><a href="#cb13-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-61"><a href="#cb13-61" aria-hidden="true" tabindex="-1"></a>        rhs <span class="op">=</span> jnp.sqrt(alphas[t]) <span class="op">*</span> (<span class="fl">1.0</span> <span class="op">-</span> alphas_bar[t <span class="op">-</span> <span class="dv">1</span>])</span>
+<span id="cb13-62"><a href="#cb13-62" aria-hidden="true" tabindex="-1"></a>        rhs <span class="op">=</span> rhs <span class="op">/</span> (<span class="fl">1.0</span> <span class="op">-</span> alphas_bar[t]) <span class="op">*</span> zt</span>
+<span id="cb13-63"><a href="#cb13-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-64"><a href="#cb13-64" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> distrax.Independent(</span>
+<span id="cb13-65"><a href="#cb13-65" aria-hidden="true" tabindex="-1"></a>            distrax.Normal(</span>
+<span id="cb13-66"><a href="#cb13-66" aria-hidden="true" tabindex="-1"></a>                lhs <span class="op">+</span> rhs,</span>
+<span id="cb13-67"><a href="#cb13-67" aria-hidden="true" tabindex="-1"></a>                jnp.repeat(jnp.sqrt(beta_tilde), y.shape[<span class="op">-</span><span class="dv">1</span>])</span>
+<span id="cb13-68"><a href="#cb13-68" aria-hidden="true" tabindex="-1"></a>            ), <span class="dv">1</span></span>
+<span id="cb13-69"><a href="#cb13-69" aria-hidden="true" tabindex="-1"></a>        )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Since our new ELBO consists only of three terms, we can increase the number of diffusions. Here, we set it to 100:</p>
+<div class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>n_diffusions <span class="op">=</span> <span class="dv">100</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>beta_schedule <span class="op">=</span> jnp.linspace(<span class="fl">10e-4</span>, <span class="fl">0.02</span>, n_diffusions)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Training the ELBO is similar to the above. We first define the model again:</p>
+<div class="cell" data-execution_count="14">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _dm(method, <span class="op">**</span>kwargs):</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    reverse_process <span class="op">=</span> hk.Sequential([</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>        hk.Linear(<span class="dv">256</span>), jax.nn.leaky_relu,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>        hk.Linear(<span class="dv">256</span>), jax.nn.leaky_relu,        </span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>        hk.Linear(<span class="dv">256</span>), jax.nn.leaky_relu,        </span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        hk.Linear(<span class="dv">2</span> <span class="op">*</span> <span class="dv">2</span>),</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    ])</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> DPM(beta_schedule, reverse_process)(method, <span class="op">**</span>kwargs)</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>diffusion <span class="op">=</span> hk.transform(_dm)</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>params <span class="op">=</span> diffusion.init(</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    random.PRNGKey(<span class="dv">23</span>),</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    z<span class="op">=</span>y,</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    method<span class="op">=</span><span class="st">"reverse_process"</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Then, we define our updated objective:</p>
+<div class="cell" data-execution_count="15">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>adam <span class="op">=</span> optax.adamw(<span class="fl">0.001</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>opt_state <span class="op">=</span> adam.init(params)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">2</span>)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="at">@jax.jit</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> step(params, opt_state, y, rng):</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> loss_fn(params):</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>        t <span class="op">=</span> np.random.choice(np.arange(<span class="dv">1</span>, n_diffusions))</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">## compute the last term: KL between priors</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>        q_z_T <span class="op">=</span> diffusion.<span class="bu">apply</span>(</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>            params, rng<span class="op">=</span>rng, y<span class="op">=</span>y, t<span class="op">=</span>n_diffusions <span class="op">-</span> <span class="dv">1</span>, method<span class="op">=</span><span class="st">"forward_process"</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>        p_z_T <span class="op">=</span> distrax.Independent(</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>            distrax.Normal(jnp.zeros_like(y), <span class="dv">1</span>), <span class="dv">1</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># KL q(z_T | y) || p(z_T)</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>        kl_T <span class="op">=</span> q_z_T.kl_divergence(p_z_T)</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>        <span class="co">## compute the middle term: KL between two adjacent t's</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>        sample_rng, new_rng <span class="op">=</span> random.split(rng)</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>        e_t <span class="op">=</span> distrax.Normal(jnp.zeros_like(y), <span class="fl">1.0</span>).sample(seed<span class="op">=</span>sample_rng)        </span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>        z_t <span class="op">=</span> diffusion.<span class="bu">apply</span>(</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>            params, rng<span class="op">=</span>rng, y<span class="op">=</span>y, t<span class="op">=</span>t, epsilon<span class="op">=</span>e_t,</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>            method<span class="op">=</span><span class="st">"sample_forward_process"</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>        q_z_tm1 <span class="op">=</span> diffusion.<span class="bu">apply</span>(</span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>            params, rng<span class="op">=</span>rng, y<span class="op">=</span>y, zt<span class="op">=</span>z_t, t<span class="op">=</span>t,</span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>            method<span class="op">=</span><span class="st">"posterior_forward_process"</span></span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>        p_z_tm1 <span class="op">=</span> diffusion.<span class="bu">apply</span>(</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>            params, rng<span class="op">=</span>rng, z<span class="op">=</span>z_t, method<span class="op">=</span><span class="st">"reverse_process"</span></span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>        <span class="co"># KL q(z{t - 1} | Z_t, Y) || p(z_{t - 1} | z_t)</span></span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>        kl <span class="op">=</span> q_z_tm1.kl_divergence(p_z_tm1)</span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>        <span class="co">## compute the first term: log likeihood</span></span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>        sample_rng, new_rng <span class="op">=</span> random.split(new_rng)</span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a>        e_1 <span class="op">=</span> distrax.Normal(jnp.zeros_like(y), <span class="fl">1.0</span>).sample(seed<span class="op">=</span>sample_rng)</span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a>        z_1 <span class="op">=</span> diffusion.<span class="bu">apply</span>(</span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a>            params, rng<span class="op">=</span>rng, y<span class="op">=</span>y, t<span class="op">=</span><span class="dv">0</span>, epsilon<span class="op">=</span>e_1, method<span class="op">=</span><span class="st">"sample_forward_process"</span></span>
+<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a>        p_z_1 <span class="op">=</span> diffusion.<span class="bu">apply</span>(</span>
+<span id="cb16-44"><a href="#cb16-44" aria-hidden="true" tabindex="-1"></a>            params, rng<span class="op">=</span>rng, z<span class="op">=</span>z_1, method<span class="op">=</span><span class="st">"reverse_process"</span></span>
+<span id="cb16-45"><a href="#cb16-45" aria-hidden="true" tabindex="-1"></a>        )        </span>
+<span id="cb16-46"><a href="#cb16-46" aria-hidden="true" tabindex="-1"></a>        <span class="co"># log likelihood P(Y | Z_1)</span></span>
+<span id="cb16-47"><a href="#cb16-47" aria-hidden="true" tabindex="-1"></a>        log_pxz <span class="op">=</span> p_z_1.log_prob(y)</span>
+<span id="cb16-48"><a href="#cb16-48" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb16-49"><a href="#cb16-49" aria-hidden="true" tabindex="-1"></a>        loss <span class="op">=</span> <span class="op">-</span>jnp.<span class="bu">sum</span>(log_pxz <span class="op">-</span> kl <span class="op">-</span> kl_T)</span>
+<span id="cb16-50"><a href="#cb16-50" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> loss</span>
+<span id="cb16-51"><a href="#cb16-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-52"><a href="#cb16-52" aria-hidden="true" tabindex="-1"></a>    loss, grads <span class="op">=</span> jax.value_and_grad(loss_fn)(params)</span>
+<span id="cb16-53"><a href="#cb16-53" aria-hidden="true" tabindex="-1"></a>    updates, new_opt_state <span class="op">=</span> adam.update(grads, opt_state, params)</span>
+<span id="cb16-54"><a href="#cb16-54" aria-hidden="true" tabindex="-1"></a>    new_params <span class="op">=</span> optax.apply_updates(params, updates)</span>
+<span id="cb16-55"><a href="#cb16-55" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> loss, new_params, new_opt_state</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Finally, we train the model. The training procedure is exactly the same as above.</p>
+<div class="cell" data-execution_count="16">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>prng_seq <span class="op">=</span> hk.PRNGSequence(<span class="dv">1</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>batch_size <span class="op">=</span> <span class="dv">128</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>num_batches <span class="op">=</span> y.shape[<span class="dv">0</span>] <span class="op">//</span> batch_size</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>idxs <span class="op">=</span> jnp.arange(y.shape[<span class="dv">0</span>])</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="at">@timer</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> optim(params, opt_state, n_iter <span class="op">=</span> <span class="dv">2000</span>):    </span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    losses <span class="op">=</span> [<span class="dv">0</span>] <span class="op">*</span> n_iter</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n_iter):</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>        loss <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(batch_size):</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>            ret_idx <span class="op">=</span> lax.dynamic_slice_in_dim(idxs, j <span class="op">*</span> batch_size, batch_size)</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>            batch <span class="op">=</span> lax.index_take(y, (ret_idx,), axes<span class="op">=</span>(<span class="dv">0</span>,))</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>            batch_loss, params, opt_state <span class="op">=</span> step(params, opt_state, batch, <span class="bu">next</span>(prng_seq))</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>            loss <span class="op">+=</span> batch_loss</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>        losses[i] <span class="op">=</span> loss</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> params, losses</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>params, losses <span class="op">=</span> optim(params, opt_state)</span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>losses <span class="op">=</span> jnp.asarray(losses)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/Users/simon/miniconda3/envs/etudes/lib/python3.9/site-packages/jax/_src/numpy/lax_numpy.py:4488: UserWarning: Explicitly requested dtype &lt;class 'jax.numpy.float64'&gt; requested in astype is not available, and will be truncated to dtype float32. To enable more dtypes, set the jax_enable_x64 configuration option or the JAX_ENABLE_X64 shell environment variable. See https://github.com/google/jax#current-gotchas for more.
+  lax_internal._check_user_dtype_supported(dtype, "astype")</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Elapsed time: 620.2626802499999</code></pre>
+</div>
+</div>
+<p>Training this objective is significantly faster than the original one, despite increasing the number of diffusions. Let’s have a look at the ELBO again:</p>
+<div class="cell" data-execution_count="17">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> sns.lineplot(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  data<span class="op">=</span>pd.DataFrame({<span class="st">"y"</span>: np.asarray(losses), <span class="st">"x"</span>: <span class="bu">range</span>(<span class="bu">len</span>(losses))}),</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  y<span class="op">=</span><span class="st">"y"</span>, x<span class="op">=</span><span class="st">"x"</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  color<span class="op">=</span><span class="st">'black'</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>ax.<span class="bu">set</span>(</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  xlabel<span class="op">=</span><span class="st">""</span>, ylabel<span class="op">=</span><span class="st">"-ELBO"</span>,</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  xticks<span class="op">=</span>[], xticklabels<span class="op">=</span>[],</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>  yticks<span class="op">=</span>[], yticklabels<span class="op">=</span>[]</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="diffusion_models_files/figure-html/cell-18-output-1.png" width="486" height="249"></p>
+</div>
+</div>
+<p>In the end, let’s also sample some data.</p>
+<div class="cell" data-execution_count="18">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>prior <span class="op">=</span> distrax.Normal(jnp.zeros(<span class="dv">2</span>), jnp.ones(<span class="dv">2</span>))</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span>  prior.sample(</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    seed<span class="op">=</span>random.PRNGKey(<span class="dv">33</span>),</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    sample_shape<span class="op">=</span>(<span class="dv">5000</span>,)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>y_hat <span class="op">=</span> diffusion.<span class="bu">apply</span>(</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    params, rng<span class="op">=</span>random.PRNGKey(<span class="dv">1</span>), </span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    z<span class="op">=</span>z, method<span class="op">=</span><span class="st">"reverse_diffusion"</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> sns.kdeplot(</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>  data<span class="op">=</span>pd.DataFrame(np.asarray(y_hat), columns<span class="op">=</span>[<span class="st">"x"</span>, <span class="st">"y"</span>]),</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>  x<span class="op">=</span><span class="st">"x"</span>, y<span class="op">=</span><span class="st">"y"</span>, fill<span class="op">=</span><span class="va">True</span>, cmap<span class="op">=</span><span class="st">"mako_r"</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>ax.<span class="bu">set</span>(xlabel<span class="op">=</span><span class="st">"$y_0$"</span>, ylabel<span class="op">=</span><span class="st">"$y_1$"</span>)</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="diffusion_models_files/figure-html/cell-19-output-1.png" width="520" height="288"></p>
+</div>
+</div>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>DPMs are an exciting new class of models for generative modelling and density estimation. Even though the model was originally published in 2015 already, recent interest was (afaict) mainly sparked by the follow-up papers by <span class="citation" data-cites="ho2020denoising">Ho, Jain, and Abbeel (<a href="#ref-ho2020denoising" role="doc-biblioref">2020</a>)</span> and <span class="citation" data-cites="dhariwal2021diffusion">Dhariwal and Nichol (<a href="#ref-dhariwal2021diffusion" role="doc-biblioref">2021</a>)</span> which demonstrated that DPMs are SOTA generative models, e.g., in image generation. The next <a href="https://dirmeier.github.io/etudes/denoising_diffusion_models.html">case-study</a>) will demonstrate the improvements made by <span class="citation" data-cites="ho2020denoising">Ho, Jain, and Abbeel (<a href="#ref-ho2020denoising" role="doc-biblioref">2020</a>)</span>.</p>
+</section>
+<section id="session-info" class="level1">
+<h1>Session info</h1>
+<div class="cell" data-execution_count="19">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> session_info</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>session_info.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="95">
+<details>
+<summary>Click to view session information</summary>
+<pre>-----
+arviz               0.12.0
+distrax             0.1.2
+haiku               0.0.6
+jax                 0.3.14
+jaxlib              0.3.7
+matplotlib          3.4.3
+numpy               1.20.3
+optax               0.1.2
+palettes            NA
+pandas              1.3.4
+seaborn             0.11.2
+session_info        1.0.0
+-----
+</pre>
+<details>
+<summary>Click to view modules imported as dependencies</summary>
+<pre>PIL                         9.0.1
+absl                        NA
+appnope                     0.1.3
+asttokens                   NA
+backcall                    0.2.0
+beta_ufunc                  NA
+binom_ufunc                 NA
+bottleneck                  1.3.4
+cffi                        1.15.0
+cftime                      1.5.1.1
+chex                        0.1.3
+colorama                    0.4.5
+cycler                      0.10.0
+cython_runtime              NA
+dateutil                    2.8.2
+decorator                   5.1.1
+defusedxml                  0.7.1
+entrypoints                 0.4
+etils                       0.6.0
+executing                   0.10.0
+flatbuffers                 2.0
+importlib_metadata          NA
+ipykernel                   5.5.5
+ipython_genutils            0.2.0
+ipywidgets                  7.7.0
+jedi                        0.18.1
+jmp                         0.0.2
+jupyter_server              1.16.0
+kiwisolver                  1.4.2
+matplotlib_inline           0.1.6
+mpl_toolkits                NA
+nbinom_ufunc                NA
+netCDF4                     1.5.7
+numexpr                     2.8.1
+opt_einsum                  v3.3.0
+packaging                   21.3
+parso                       0.8.3
+pexpect                     4.8.0
+pickleshare                 0.7.5
+pkg_resources               NA
+prompt_toolkit              3.0.30
+ptyprocess                  0.7.0
+pure_eval                   0.2.2
+pygments                    2.13.0
+pyparsing                   3.0.8
+pytz                        2022.1
+scipy                       1.7.3
+setuptools                  61.2.0
+six                         1.16.0
+sphinxcontrib               NA
+stack_data                  0.4.0
+tabulate                    0.8.10
+tensorflow_probability      0.17.0-dev20220713
+toolz                       0.11.2
+tornado                     6.1
+traitlets                   5.3.0
+tree                        0.1.7
+typing_extensions           NA
+wcwidth                     0.2.5
+xarray                      2022.3.0
+zipp                        NA
+zmq                         23.2.0
+</pre>
+</details> <!-- seems like this ends pre, so might as well be explicit -->
+<pre>-----
+IPython             8.4.0
+jupyter_client      7.3.4
+jupyter_core        4.10.0
+jupyterlab          3.3.4
+notebook            6.4.12
+-----
+Python 3.9.10 | packaged by conda-forge | (main, Feb  1 2022, 21:27:43) [Clang 11.1.0 ]
+macOS-12.2.1-arm64-i386-64bit
+-----
+Session information updated at 2022-08-31 15:12
+</pre>
+</details>
+</div>
+</div>
+</section>
+<section id="license" class="level1">
+<h1>License</h1>
+<p><a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png"></a></p>
+<p>The notebook is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.</p>
+</section>
+<section id="references" class="level1 unnumbered">
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
+<div id="ref-dhariwal2021diffusion" class="csl-entry" role="doc-biblioentry">
+Dhariwal, Prafulla, and Alexander Nichol. 2021. <span>“Diffusion Models Beat GANs on Image Synthesis.”</span> <em>Advances in Neural Information Processing Systems</em> 34: 8780–94.
+</div>
+<div id="ref-ho2020denoising" class="csl-entry" role="doc-biblioentry">
+Ho, Jonathan, Ajay Jain, and Pieter Abbeel. 2020. <span>“Denoising Diffusion Probabilistic Models.”</span> <em>Advances in Neural Information Processing Systems</em> 33: 6840–51.
+</div>
+<div id="ref-sohl2015deep" class="csl-entry" role="doc-biblioentry">
+Sohl-Dickstein, Jascha, Eric Weiss, Niru Maheswaranathan, and Surya Ganguli. 2015. <span>“Deep Unsupervised Learning Using Nonequilibrium Thermodynamics.”</span> In <em>International Conference on Machine Learning</em>, 2256–65. PMLR.
+</div>
+</div></section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

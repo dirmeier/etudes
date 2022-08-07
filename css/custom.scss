@@ -1,0 +1,75 @@
+/*-- scss:rules --*/
+
+@import url('https://fonts.googleapis.com/css?family=Merriweather|Inconsolata|EB+Garamond');
+
+body {
+  font-family:  "Merriweather", serif;
+  font-size: 14px;
+  color: #333333;
+  line-height: 1.6;
+  text-align: justify;  
+}
+
+main {
+  margin-top: 50px;
+  min-width: 800px ;
+}
+
+h1, h2, h3 {
+  font-style: italic;
+  font-weight: 400;  
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+
+
+h2 {
+  font-size: 1.2rem;
+  border: none;
+  padding-bottom: 0rem;
+}
+
+
+h1.title {
+  font-size: 1.8rem;
+}
+
+.sidebar.toc-right {
+  font-size: 15px;
+}
+
+.title {
+   color: #333333;
+   font-family: 'Merriweather';
+   margin-bottom: 3%;
+   margin-top: 6%;
+}
+
+#TOC {
+  padding-top: 25px;
+  border-radius: 0px;
+  border: 0px;
+  overflow: auto;
+  font-style: italic;
+  margin-left: 10px;
+  margin-top: 10px;
+}
+
+
+#TOC::-webkit-scrollbar {
+  display: none;
+}
+
+ul > li > a {
+  font-size: 14px;
+}
+
+ul > li > a.active, ul > li > a.active:hover, ul > li > a.active:focus {
+  background-color: white;
+  border-color: #f5f5f5;
+  color: #1F407A;
+}

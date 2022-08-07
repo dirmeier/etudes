@@ -26,19 +26,10 @@ The repository hosts some notebooks on probabilistic models, such as Gaussian pr
 - [Hilbert-space approximate copula processes](https://dirmeier.github.io/etudes/low_rank_copula_processes.html) explains how a copula process in conjunction with Hilbert-space approximations can be used to model stochastic volatility.
 - [VI for stick-breaking constructions](https://dirmeier.github.io/etudes/stick_breaking_constructions.html) implements mean-field variational approximations for nonparametric mixture and factor models using stick-breaking constructions.
 - [Tensor-product spline smoothers](https://dirmeier.github.io/etudes/causal_inference_using_tensor_product_smoothing_splines.html) implements a probabilistic model for causal inference with structured latent confounders.
-
+- [Normalizing flows for variational inference](https://dirmeier.github.io/etudes/normalizing_flows_for_vi.html) implements an *inverse autoregressive flow* for variational inference of parameters in a simple bivariate Gaussian example in Jax, Distrax, Optax and Haiku.
+- [Diffusion models I](https://dirmeier.github.io/etudes/diffusion_models.html) introduces a novel class of generative models that are inspired by non-equilibrium thermodynamics.
 
 ## Build
-
-Make sure to have Jupyter extensions installed (e.g. `toc2`) and add this under the `metadata`:
-
-```
-"toc": {
- "number_sections": false,
- "sideBar": true,
- "skip_h1": true
-}
-```
 
 Compile the Jupyter notebook to html via
 
@@ -48,4 +39,4 @@ make file=FILE.ipynb
 
 ## Author
 
-Simon Dirmeier <a href="mailto:simon.dirmeier@web.de">simon.dirmeier @ web.de</a>
+Simon Dirmeier <a href="mailto:sfyrbnd @ pm.me">sfyrbnd @ pm me</a>
