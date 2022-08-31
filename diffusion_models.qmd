@@ -369,21 +369,20 @@ $$
 
 Plugin these derivations into the ELBO gives us the following:
 $$
-\mathbb{E}_{q, t} \biggl[ 
+\mathbb{E}_{q} \biggl[ 
 \log p_\theta \left(\mathbf{y}, \mathbf{z}_1 \right) -
-\mathbb{KL}\Bigl[ q(\mathbf{z}_{t - 1} \mid \mathbf{z}_{t}, \mathbf{y}), p_\theta(\mathbf{z}_{t - 1} \mid \mathbf{z}_t)  \Bigr] -
+\sum_{t=2}^T \mathbb{KL}\Bigl[ q(\mathbf{z}_{t - 1} \mid \mathbf{z}_{t}, \mathbf{y}), p_\theta(\mathbf{z}_{t - 1} \mid \mathbf{z}_t)  \Bigr] -
 \mathbb{KL}\Bigl[ q(\mathbf{z}_T \mid \mathbf{y}), p_\theta(\mathbf{z}_T)  \Bigr]
 \biggr]
 $$
 
-Instead of sampling all T $\mathbf{z}_i$s, we can instead only optimze the first and the last part and one summand of the sum over the $t$s
+Instead of sampling all T $\mathbf{z}_i$s, we can instead only optimize the first and the last part and one summand of the sum over the $t$s
 
 $$
-\mathbb{E}_{q, t} \biggl[ 
+\mathbb{E}_{q, t \sim \mathcal{U}} \biggl[ 
 \log p_\theta \left(\mathbf{y}, \mathbf{z}_1 \right) -
-\mathbb{KL}\Bigl[ q(\mathbf{z}_T \mid \mathbf{y}), p_\theta(\mathbf{z}_T)  \Bigr] -
-\mathbb{KL}\Bigl
-[ q(\mathbf{z}_{t - 1} \mid \mathbf{z}_{t}, \mathbf{y}), p_\theta(\mathbf{z}_{t - 1} \mid \mathbf{z}_t)  \Bigr] 
+\mathbb{KL}\Bigl[ q(\mathbf{z}_{t - 1} \mid \mathbf{z}_{t}, \mathbf{y}), p_\theta(\mathbf{z}_{t - 1} \mid \mathbf{z}_t)  \Bigr] -
+\mathbb{KL}\Bigl[ q(\mathbf{z}_T \mid \mathbf{y}), p_\theta(\mathbf{z}_T)  \Bigr]
 \biggr]
 $$
 
@@ -589,7 +588,7 @@ Training this objective is significantly faster than the original one, despite i
 
 ```{python}
 ax = sns.lineplot(
-  d  ata=pd.DataFrame({"y": np.asarray(losses), "x": range(len(losses))}),
+    data=pd.DataFrame({"y": np.asarray(losses), "x": range(len(losses))}),
     y="y", x="x",
     color='black'
 )
@@ -626,7 +625,7 @@ As before, the density of the data was estimated fairly well given the simple mo
 
 # Conclusion
 
-DPMs are an exciting new class of models for generative modelling and density estimation. Even though the model was originally published in 2015 already, recent interest was (afaict) mainly sparked by the follow-up papers by @ho2020denoising and @dhariwal2021diffusion which demonstrated that DPMs are SOTA generative models, e.g., in image generation. The next [case-study](https://dirmeier.github.io/etudes/denoising_diffusion_models.html)) will demonstrate the improvements made by @ho2020denoising.
+DPMs are an exciting new class of models for generative modelling and density estimation. Even though the model was originally published in 2015 already, recent interest was (afaict) mainly sparked by the follow-up papers by @ho2020denoising and @dhariwal2021diffusion which demonstrated that DPMs are SOTA generative models, e.g., in image generation. The next [case-study](https://dirmeier.github.io/etudes/denoising_diffusion_models.html) will demonstrate the improvements made by @ho2020denoising.
 
 # Session info
 
