@@ -28,14 +28,17 @@ The repository hosts some notebooks on probabilistic models, such as Gaussian pr
 - [Tensor-product spline smoothers](https://dirmeier.github.io/etudes/causal_inference_using_tensor_product_smoothing_splines.html) implements a probabilistic model for causal inference with structured latent confounders.
 - [Normalizing flows for variational inference](https://dirmeier.github.io/etudes/normalizing_flows_for_vi.html) implements an *inverse autoregressive flow* for variational inference of parameters in a simple bivariate Gaussian example in Jax, Distrax, Optax and Haiku.
 - [Diffusion models I](https://dirmeier.github.io/etudes/diffusion_models.html) introduces a novel class of generative models that are inspired by non-equilibrium thermodynamics.
+- [Probabilistic reconciliation](https://dirmeier.github.io/etudes/probabilistic_reconciliation.html) implements and tests two recent methods on reconciliation of hierarchical time series forecasts.
 
 ## Build
 
-Compile the Jupyter notebook to html via
+Compile the qmd files via
 
 ```
-make file=FILE.ipynb
+make file=FILE.qmd
 ```
+
+Then move the created html and folder of images to docs.
 
 ## Author
 
