@@ -370,7 +370,7 @@ $$
 Plugin these derivations into the ELBO gives us the following:
 $$
 \mathbb{E}_{q} \biggl[ 
-\log p_\theta \left(\mathbf{y}, \mathbf{z}_1 \right) -
+\log p_\theta \left(\mathbf{y} \mid \mathbf{z}_1 \right) -
 \sum_{t=2}^T \mathbb{KL}\Bigl[ q(\mathbf{z}_{t - 1} \mid \mathbf{z}_{t}, \mathbf{y}), p_\theta(\mathbf{z}_{t - 1} \mid \mathbf{z}_t)  \Bigr] -
 \mathbb{KL}\Bigl[ q(\mathbf{z}_T \mid \mathbf{y}), p_\theta(\mathbf{z}_T)  \Bigr]
 \biggr]
